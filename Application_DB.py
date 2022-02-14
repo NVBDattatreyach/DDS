@@ -61,7 +61,7 @@ for address in ip_address:
             CREATE TABLE IF NOT EXISTS LOCATION(
                 Loc_Id varchar(255),
                 PRIMARY KEY (Loc_Id)
-            )
+            );
             CREATE TABLE IF NOT EXISTS EMP_DET2(
                 Emp_Id int NOT NULL,
                 Name varchar(255),
@@ -85,6 +85,8 @@ for address in ip_address:
 
             
         """)
+        conn.commit()
+        conn.close()
     elif address=="10.3.5.204":
         cur.execute("""
             CREATE TABLE IF NOT EXISTS EMP3(
@@ -124,8 +126,10 @@ for address in ip_address:
                 Desgn_Name varchar(255),
                 Salary int,
                 PRIMARY KEY (Desgn_Id)
-            )
+            );
         """)
+        conn.commit()
+        conn.close()
     else:
         cur.execute("""
             CREATE TABLE IF NOT EXISTS EMP4(
@@ -162,9 +166,5 @@ for address in ip_address:
             
             
         """)
-
-"""
-EMP1,EMP_DET1,DEPT,Project_1,WORKS_ON1,DESGN1
-
-
-"""
+        conn.commit()
+        conn.close()

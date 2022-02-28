@@ -1,16 +1,12 @@
 import pymysql
 from pymysql.constants import CLIENT
 
-ip_address=['10.3.5.211','10.3.5.208','10.3.5.204','10.3.5.205']
-for address in ip_address:
-    print("creating tables at ",address)
-    conn=pymysql.connect(
-        host=address,
-        user='xavier',
-        password='xmen123',
-        db='XMEN',
-        client_flag=CLIENT.MULTI_STATEMENTS,)
-    cur=conn.cursor()
+def exec_query(cur,conn,query):
+    cur.execute(query)
+    conn.commit()
+
+def create_tables(cur):
+    
     cur.execute("SET FOREIGN_KEY_CHECKS=0;")
     cur.execute("DROP TABLE IF EXISTS APPLICATION_TABLE;")
     cur.execute("DROP TABLE IF EXISTS FRAGMENTS;")
@@ -48,7 +44,7 @@ for address in ip_address:
         Column_Datatype varchar(255),
         Key_Attribute boolean,
         PRIMARY KEY (Table_Id,Column_Name),
-        FOREIGN KEY (Table_id) REFERENCES APPLICATION_TABLE(Table_Id)
+        FOREIGN KEY (Table_Id) REFERENCES APPLICATION_TABLE(Table_Id)
     );
     CREATE TABLE IF NOT EXISTS PREDICATES
     (
@@ -90,9 +86,21 @@ for address in ip_address:
     );
     
     """)
+def connect(ip_address):
+    
+    
+    conn=pymysql.connect(
+        host=ip_address,
+        user='xavier',
+        password='xmen123',
+        db='XMEN',
+        client_flag=CLIENT.MULTI_STATEMENTS,)
+    return conn
+        
+        
     
     print("inserting into APPLICATION_TABLE table")
-
+def insert(cur):
     cur.execute("""
         INSERT INTO APPLICATION_TABLE VALUES(1,"EMPLOYEE");
         INSERT INTO APPLICATION_TABLE VALUES(2,"DEPARTMENT");
@@ -297,6 +305,16 @@ for address in ip_address:
         
     """)
     conn.commit()
-    conn.close()
+    
 
+    
+if __name__=="__main__":
+    ip_address=['10.3.5.211','10.3.5.208','10.3.5.204','10.3.5.205']
+    for address in ip_address:
+        conn=connect(address)
+        cur=conn.cursor()
+        create_tables(cur)
+        conn.commit()
+        insert(cur)
+        conn.close()
     

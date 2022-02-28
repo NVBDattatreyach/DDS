@@ -5,17 +5,18 @@ class Tree:
         self.data = None
 
 # assumption that => Emp.sal format will be used
-def build_tree_from_direct_query(query):
-    parts = query[0]
+def build_tree_from_direct_query(table_name, queries):
+    parts = queries[0]
     # for parts in query:
     # print('part:', parts, 'type:', type(parts))
     child_node = Tree()
-    child_node.data = ((parts.value).split('.'))[0] # extracting table name from select operator
+    # child_node.data = ((parts.value).split('.'))[0] # extracting table name from select operator
+    child_node.data = table_name
     # child_node.left = None
     # child_node.right = None
-        
+    # print(table_name,'=>',queries)
     parent_node = Tree()
-    parent_node.data = 'select '+parts.value
+    parent_node.data = 'select '+' '.join(query for query in queries)
     parent_node.children.append(child_node)
     return parent_node
 

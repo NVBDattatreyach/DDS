@@ -4,13 +4,13 @@ import sqlparse
 def parse_query(query):
     if(isinstance(query, sqlparse.sql.Parenthesis)):
         parsed_tokens = query
-        print('converted!')
+        # print('converted!')
     else:
         parsed = sqlparse.parse(query)
         parsed_tokens = parsed[0]
-    print('query type:', type(query))
+    # print('query type:', type(query))
     
-    # parsed._pprint_tree()
+    # parsed_tokens._pprint_tree()
     # print('type of parsed:', type(parsed))
     clause_name = None
     select_tokens = []
@@ -37,6 +37,7 @@ def parse_query(query):
                     # print('iden tokens:', condition.tokens)
                     # if isinstance(condition.tokens, sqlparse.sql.Identifier):
                     #     print('identifier ===', condition)
+                # elif isinstance
                 if isinstance(condition, sqlparse.sql.Token) and (condition.value.lower()=='and' or condition.value.lower()=='or'):
                     keyword.append(condition.value)
         
@@ -57,5 +58,5 @@ def parse_query(query):
             select_tokens.append(token.value)
         # print('select_clause', select_tokens)
         # print('from_clause', from_clause)
-        # print('where_clause', where_clause)
+        # print('where_clause', where_clause[0])
     return select_tokens, from_clause, where_clause, keyword

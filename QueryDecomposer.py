@@ -61,7 +61,9 @@ def decompose_query(select_clause, from_clause, where_clause, attribute_table_ma
             # scan the direct_query_nodes list to find out the correct pair of nodes to be joined
             # also assuming that only one attribute is used to join 2 tables
             for idx, query in enumerate(direct_query_nodes):
-                table_name = (((query.data.split())[1]).split('.'))[0]
+                # table_name = (((query.data.split())[1]).split('.'))[0]
+                q_l, q_r = split_query(query.data.split(' ',1)[1])
+                table_name = get_table_name(q_l.strip(), from_clause, attribute_table_map)
                 if(table_name == lhs_table):
                     left_node = query
                     direct_query_nodes[idx] = None
@@ -73,6 +75,10 @@ def decompose_query(select_clause, from_clause, where_clause, attribute_table_ma
                 # print('len_direct_q:', len(direct_query_nodes))
             # if(left_node!=None and right_node!=None):
             #     print('left_child:', left_node.data, 'right_child:', right_node.data)
+            if(left_node == None):
+                left_node = get_child_node(lhs_table, attribute_table_map)
+            if(right_node == None):
+                right_node = get_child_node(rhs_table, attribute_table_map)
             join_query_node = build_tree_from_join_query(condition.value, [left_node, right_node])
             join_query_nodes.append(join_query_node)
         

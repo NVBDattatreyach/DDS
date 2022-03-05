@@ -3,3 +3,5 @@ Select * from Student Where classID = (Select id from class where noofstudents =
 SELECT Student_ID FROM STUDENT
 SELECT * FROM STUDENT
 SELECT EMP_ID, NAME FROM EMPLOYEE_TBL WHERE EMP_ID = '0000'
+SELECT title FROM ParamountMovies WHERE year = 1979
+Select startName, studioName from startsIn, Movies where year=1996 and startsIn.title=Movies.title

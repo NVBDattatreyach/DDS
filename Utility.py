@@ -18,7 +18,7 @@ def build_tree_from_direct_query(table_name, queries, clause='select '):
     # child_node.right = None
     # print(table_name,'=>',queries)
     parent_node = Tree()
-    parent_node.data = clause+' '+queries
+    parent_node.data = clause+queries
     parent_node.children.append(child_node)
     return parent_node
 
@@ -81,7 +81,15 @@ def get_attribute_to_table_mapping(select_clause, from_clause):
 
 def get_attr_list_for_table(table_name):
     # tbd
-    return ['sal', 'Student_ID', 'Eno', 'EMP_ID', 'NAME', '*']
+    if(table_name == 'Emp'):
+        return ['sal', 'Eno', 'EMP_ID']
+    if(table_name == 'STUDENT'):
+        return ['Student_ID']
+    if(table_name == 'startsIn'):
+        return ['title', 'yearr', 'startName']
+    if(table_name == 'Movies'):
+        return ['title', 'yearr', 'studioName']
+    return '*'
 
 def get_table_name(attribute, from_clause, attribute_table_map): 
     if('.' in attribute):
@@ -112,7 +120,7 @@ def split_query(query):
 def get_optimized_tree(root, from_clause, attribute_table_map, table_attr_map):
     if(root == None):
         return
-    print('root:', root, ' table_attr_map:', table_attr_map)
+    # print('root:', root, ' table_attr_map:', table_attr_map)
     # leaf node case
     if(len(root.children) == 0):
         if(root.data.startswith('project')):
@@ -156,17 +164,17 @@ def get_optimized_tree(root, from_clause, attribute_table_map, table_attr_map):
             else:
                 # print('query:', query)
                 left_operand, right_operand = split_query(query)
-                attr_list.append(left_operand)
-                attr_list.append(right_operand)
-        print('attr_lst:', attr_list)
+                attr_list.append(left_operand.strip())
+                attr_list.append(right_operand.strip())
         for attr in attr_list:
             table_name = get_table_name(attr, from_clause, attribute_table_map)
-            print('table_name:', table_name)
             if(table_name != None):
                 table_name = table_name.strip()
                 if(table_name not in table_attr_map):
                     table_attr_map[table_name] = []
-                table_attr_map[table_name].append(get_attribute_name(attr))
+                attr_name = get_attribute_name(attr)
+                if(attr_name not in table_attr_map[table_name]):
+                    table_attr_map[table_name].append(attr_name)
 
         
         for i, child in enumerate(root.children):
@@ -175,4 +183,11 @@ def get_optimized_tree(root, from_clause, attribute_table_map, table_attr_map):
             root.children[i] = get_optimized_tree(child, from_clause, attribute_table_map, table_attr_map)
         
         return root
-            
+
+def get_child_node(given_table_name, attribute_table_map):
+    for attr, table_name in attribute_table_map.items():
+        if(given_table_name == table_name):
+            node = build_tree_from_direct_query(table_name, attr, clause='project ')
+            return node
+    node = build_tree_from_direct_query(table_name, '*', clause='project ')
+    return node

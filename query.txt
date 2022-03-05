@@ -1,0 +1,5 @@
+Select Eno From Emp, Dept Where Emp.sal>50 and Dept.loc='Hyd' and Emp.Dno=Dept.Dno
+Select * from Student Where classID = (Select id from class where noofstudents = (select max(noofstudents) from class))
+SELECT Student_ID FROM STUDENT
+SELECT * FROM STUDENT
+SELECT EMP_ID, NAME FROM EMPLOYEE_TBL WHERE EMP_ID = '0000'

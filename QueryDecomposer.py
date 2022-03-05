@@ -4,7 +4,7 @@ from QueryParser import parse_query
 
 
 
-def decompose_query(select_clause, from_clause, where_clause):
+def decompose_query(select_clause, from_clause, where_clause, attribute_table_map):
 
     join_query = []
     direct_query = []
@@ -26,7 +26,7 @@ def decompose_query(select_clause, from_clause, where_clause):
 
         if(isinstance(right_part, sqlparse.sql.Parenthesis)):
             sel_clause, fr_clause, whr_clause, keyword = parse_query(right_part)
-            subtree = decompose_query(sel_clause, fr_clause, whr_clause)
+            subtree = decompose_query(sel_clause, fr_clause, whr_clause, attribute_table_map)
             direct_query_nodes.append(subtree)
         
         
@@ -34,12 +34,13 @@ def decompose_query(select_clause, from_clause, where_clause):
             continue
         
         else:
-            table_name = (left_part.value.split('.'))[0]
+            table_name = get_table_name(left_part.value, from_clause, attribute_table_map)
             if(table_name not in direct_query):
                 direct_query[table_name] = []
             direct_query[table_name].append(condition.value)
     
     for table_name, queries in direct_query.items():
+        queries = ','.join(queries)
         direct_query_node = build_tree_from_direct_query(table_name, queries)
         direct_query_nodes.append(direct_query_node)
     
@@ -72,7 +73,7 @@ def decompose_query(select_clause, from_clause, where_clause):
                 # print('len_direct_q:', len(direct_query_nodes))
             # if(left_node!=None and right_node!=None):
             #     print('left_child:', left_node.data, 'right_child:', right_node.data)
-            join_query_node = build_tree_from_join_query(condition, left_node, right_node)
+            join_query_node = build_tree_from_join_query(condition.value, [left_node, right_node])
             join_query_nodes.append(join_query_node)
         
         
@@ -81,5 +82,3 @@ def decompose_query(select_clause, from_clause, where_clause):
             direct_query_nodes.pop()
     root = add_root(select_clause, join_query_nodes, direct_query_nodes)
     return root 
-
-    

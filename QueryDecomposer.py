@@ -4,7 +4,7 @@ from QueryParser import parse_query
 
 
 
-def decompose_query(select_clause, from_clause, where_clause, attribute_table_map):
+def decompose_query(select_clause, from_clause, where_clause, group_by_clause, attribute_table_map):
 
     join_query = []
     direct_query = []
@@ -25,8 +25,8 @@ def decompose_query(select_clause, from_clause, where_clause, attribute_table_ma
         left_part, comparison, right_part = break_query(condition)
 
         if(isinstance(right_part, sqlparse.sql.Parenthesis)):
-            sel_clause, fr_clause, whr_clause, keyword = parse_query(right_part)
-            subtree = decompose_query(sel_clause, fr_clause, whr_clause, attribute_table_map)
+            sel_clause, fr_clause, whr_clause, gp_by_clause = parse_query(right_part)
+            subtree = decompose_query(sel_clause, fr_clause, whr_clause, gp_by_clause, attribute_table_map)
             direct_query_nodes.append(subtree)
         
         
@@ -51,8 +51,11 @@ def decompose_query(select_clause, from_clause, where_clause, attribute_table_ma
 
         if(isinstance(condition[0], sqlparse.sql.Identifier) and isinstance(condition[2], sqlparse.sql.Identifier)):
             join_query.append(condition)
-            lhs_table = ((condition[0].value).split('.'))[0]
-            rhs_table = ((condition[2].value).split('.'))[0]
+            # lhs_table = ((condition[0].value).split('.'))[0]
+            # rhs_table = ((condition[2].value).split('.'))[0]
+
+            lhs_table = get_table_name(condition[0].value, from_clause, attribute_table_map)
+            rhs_table = get_table_name(condition[2].value, from_clause, attribute_table_map)
 
             left_node = None
             right_node = None
@@ -86,5 +89,14 @@ def decompose_query(select_clause, from_clause, where_clause, attribute_table_ma
     for idx, query in enumerate(direct_query_nodes):
         if(direct_query_nodes[idx] == None):
             direct_query_nodes.pop()
-    root = add_root(select_clause, join_query_nodes, direct_query_nodes)
+
+    if(len(where_clause) == 0):
+        children_list = []
+        for table in from_clause:
+            child_node = Tree()
+            child_node.data = table
+            children_list.append(child_node)
+        query = ','.join(table for table in from_clause)
+        join_query_nodes.append(build_tree_from_join_query(query, children_list, clause='cartesian product '))
+    root = add_root(select_clause, join_query_nodes, direct_query_nodes, group_by_clause)
     return root 

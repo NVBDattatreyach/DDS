@@ -8,7 +8,8 @@ class Tree:
 
 # assumption that => Emp.sal format will be used
 def build_tree_from_direct_query(table_name, queries, clause='select '):
-    parts = queries[0]
+    # if(queries != None):
+    #     parts = queries[0]
     # for parts in query:
     # print('part:', parts, 'type:', type(parts))
     child_node = Tree()
@@ -29,21 +30,30 @@ def build_tree_from_join_query(query, children_list, clause='join '):
         node.children.append(child)
     return node
 
-def add_root(select_tokens, join_query_nodes, direct_query_nodes):
-    root_node = Tree()
-    root_node.data = 'project '+','.join(token for token in select_tokens)
+def add_root(select_tokens, join_query_nodes, direct_query_nodes, group_by_clause):
+    
+    final_project_node = Tree()
+    final_project_node.data = 'project '+','.join(token for token in select_tokens)
+    cur_node = final_project_node
+
+    if(len(group_by_clause) > 0):
+        # group_by_attrs = group_by_clause.split(' ', 1)[1].split(',')
+        gp_by_node = Tree()
+        gp_by_node.data = 'group by '+','.join(group_by_clause)
+        final_project_node.children.append(gp_by_node)
+        cur_node = gp_by_node
     
     for join_query_node in join_query_nodes:
-        root_node.children.append(join_query_node)
+        cur_node.children.append(join_query_node)
     for direct_query_node in direct_query_nodes:
-        root_node.children.append(direct_query_node)
+        cur_node.children.append(direct_query_node)
     
     # if(len(join_query_nodes)==0 and len(direct_query_nodes)==0):
     #     child_node = Tree()
     #     child_node.data = ' '.join(table for table in from_clause)
     #     root_node.children.append(child_node)
     
-    return root_node
+    return final_project_node
 
 
 def print_tree(root, space_count=1):
@@ -89,6 +99,10 @@ def get_attr_list_for_table(table_name):
         return ['title', 'yearr', 'startName']
     if(table_name == 'Movies'):
         return ['title', 'yearr', 'studioName']
+    if(table_name == 'MovieStar'):
+        return ['name', 'addr', 'gender', 'birthdate']
+    if(table_name == 'StarsIn'):
+        return ['movieTitle', 'movieYear', 'starName']
     return '*'
 
 def get_table_name(attribute, from_clause, attribute_table_map): 
@@ -147,8 +161,11 @@ def get_optimized_tree(root, from_clause, attribute_table_map, table_attr_map):
             return new_leaf
         else:
             table_name = root.data
-            # print('table:', table_name, 'attrs:', table_attr_map[table_name])
-            queries = ','.join(attr for attr in table_attr_map[table_name])
+            print('table_attr_map', table_attr_map)
+            if(table_name in table_attr_map):
+                queries = ','.join(attr for attr in table_attr_map[table_name])
+            else:
+                queries = '*'
             new_leaf = build_tree_from_direct_query(table_name, queries, clause='project ')
             # new_leaf.children.append(root)
             return new_leaf
@@ -160,8 +177,10 @@ def get_optimized_tree(root, from_clause, attribute_table_map, table_attr_map):
         attr_list = []
         for query in query_list:
             if(query_type == 'project'):
+                if(query == '*'):
+                    continue
                 attr_list.append(query)
-            else:
+            elif(query_type=='select' or query_type=='join'):
                 # print('query:', query)
                 left_operand, right_operand = split_query(query)
                 attr_list.append(left_operand.strip())
@@ -191,3 +210,26 @@ def get_child_node(given_table_name, attribute_table_map):
             return node
     node = build_tree_from_direct_query(table_name, '*', clause='project ')
     return node
+
+def valid_group_by(group_by_clause, functions):
+    # print('gp_attr:', group_by_clause)
+    # gp_attrs = (group_by_clause.split(' ', 1)[1]).split(',')
+    func_attrs_map = {}
+    for func in functions:
+        for token in func:
+            if(isinstance(token, sqlparse.sql.Identifier)):
+                func_name = token
+            elif(isinstance(token, sqlparse.sql.Parenthesis)):
+                for part in token.tokens():
+                    if(isinstance(part, sqlparse.sql.Identifier)):
+                        attr_name = part
+        if(func_name!=None and attr_name!=None):
+            func_attrs_map[func_name] = attr_name
+        else:
+            return False
+    
+    for aggregate_attrs in func_attrs_map.values():
+        if(aggregate_attrs not in group_by_clause):
+            return False
+    
+    return True

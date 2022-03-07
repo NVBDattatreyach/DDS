@@ -86,9 +86,11 @@ def decompose_query(select_clause, from_clause, where_clause, group_by_clause, a
             join_query_nodes.append(join_query_node)
         
         
-    for idx, query in enumerate(direct_query_nodes):
-        if(direct_query_nodes[idx] == None):
-            direct_query_nodes.pop()
+    for query in direct_query_nodes:
+        lst = []
+        if(query != None):
+            lst.append(query)
+        direct_query_nodes = lst
 
     if(len(where_clause) == 0):
         children_list = []
@@ -98,5 +100,7 @@ def decompose_query(select_clause, from_clause, where_clause, group_by_clause, a
             children_list.append(child_node)
         query = ','.join(table for table in from_clause)
         join_query_nodes.append(build_tree_from_join_query(query, children_list, clause='cartesian product '))
+    
+    print('giving dqn:', direct_query_nodes)
     root = add_root(select_clause, join_query_nodes, direct_query_nodes, group_by_clause)
     return root 

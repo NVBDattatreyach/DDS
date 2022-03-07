@@ -5,22 +5,18 @@ class Tree:
     def __init__(self):
         self.children = []
         self.data = None
+        self.parent = None
 
 # assumption that => Emp.sal format will be used
 def build_tree_from_direct_query(table_name, queries, clause='select '):
-    # if(queries != None):
-    #     parts = queries[0]
-    # for parts in query:
-    # print('part:', parts, 'type:', type(parts))
+
     child_node = Tree()
-    # child_node.data = ((parts.value).split('.'))[0] # extracting table name from select operator
     child_node.data = table_name
-    # child_node.left = None
-    # child_node.right = None
-    # print(table_name,'=>',queries)
     parent_node = Tree()
     parent_node.data = clause+queries
     parent_node.children.append(child_node)
+    child_node.parent = parent_node
+
     return parent_node
 
 def build_tree_from_join_query(query, children_list, clause='join '):
@@ -28,6 +24,7 @@ def build_tree_from_join_query(query, children_list, clause='join '):
     node.data = clause+query
     for child in children_list:
         node.children.append(child)
+        child.parent = node
     return node
 
 def add_root(select_tokens, join_query_nodes, direct_query_nodes, group_by_clause):
@@ -37,21 +34,19 @@ def add_root(select_tokens, join_query_nodes, direct_query_nodes, group_by_claus
     cur_node = final_project_node
 
     if(len(group_by_clause) > 0):
-        # group_by_attrs = group_by_clause.split(' ', 1)[1].split(',')
         gp_by_node = Tree()
         gp_by_node.data = 'group by '+','.join(group_by_clause)
         final_project_node.children.append(gp_by_node)
+        gp_by_node.parent = final_project_node
         cur_node = gp_by_node
     
     for join_query_node in join_query_nodes:
         cur_node.children.append(join_query_node)
+        join_query_node.parent = cur_node
+    print('len(dqn):', len(direct_query_nodes), 'contents:', direct_query_nodes)
     for direct_query_node in direct_query_nodes:
         cur_node.children.append(direct_query_node)
-    
-    # if(len(join_query_nodes)==0 and len(direct_query_nodes)==0):
-    #     child_node = Tree()
-    #     child_node.data = ' '.join(table for table in from_clause)
-    #     root_node.children.append(child_node)
+        direct_query_node.parent = cur_node
     
     return final_project_node
 
@@ -161,7 +156,7 @@ def get_optimized_tree(root, from_clause, attribute_table_map, table_attr_map):
             return new_leaf
         else:
             table_name = root.data
-            print('table_attr_map', table_attr_map)
+            # print('table_attr_map', table_attr_map)
             if(table_name in table_attr_map):
                 queries = ','.join(attr for attr in table_attr_map[table_name])
             else:

@@ -5,14 +5,11 @@ from Utility import valid_group_by
 def parse_query(query):
     if(isinstance(query, sqlparse.sql.Parenthesis)):
         parsed_tokens = query
-        # print('converted!')
     else:
         parsed = sqlparse.parse(query)
         parsed_tokens = parsed[0]
-    # print('query type:', type(query))
     
-    parsed_tokens._pprint_tree()
-    # print('type of parsed:', type(parsed))
+    # parsed_tokens._pprint_tree()
     clause_name = None
     select_tokens = []
     from_clause = []
@@ -20,8 +17,6 @@ def parse_query(query):
     group_by_clause = []
     functions = []
     for token in parsed_tokens:
-        # print('parent:', token.get_parent_name())
-        # print('token ===',token, type(token))
         if(isinstance(token, sqlparse.sql.Token)):
             # print('token_val:', token.value.lower())
             if(token.value.lower() == 'select'):
@@ -35,16 +30,8 @@ def parse_query(query):
 
         if(isinstance(token, sqlparse.sql.Where)):
             for condition in token.tokens:
-                # print('cond:', condition, 'type:', type(condition))
                 if isinstance(condition, sqlparse.sql.Comparison):
                     where_clause.append(condition)
-                    # print('comparison ===', condition)
-                    # print('iden tokens:', condition.tokens)
-                    # if isinstance(condition.tokens, sqlparse.sql.Identifier):
-                    #     print('identifier ===', condition)
-                # elif isinstance
-                # if isinstance(condition, sqlparse.sql.Token) and (condition.value.lower()=='and' or condition.value.lower()=='or'):
-                #     keyword.append(condition.value)
         
         if(isinstance(token, sqlparse.sql.Identifier)):
             print('clause_name:', clause_name)

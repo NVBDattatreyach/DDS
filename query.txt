@@ -7,3 +7,4 @@ SELECT title FROM ParamountMovies WHERE year = 1979
 Select startName, studioName from startsIn, Movies where year=1996 and startsIn.title=Movies.title
 Select movieYear, max(birthdate) from MovieStar, StarsIn where name = startName group by movieYear
 Select * from EMPLOYEE , EMPLOYEE_DETAILS where EMPLOYEE.Emp_Id=EMPLOYEE_DETAILS.Emp_Id and EMPLOYEE.Dept_Name=\'SALES\'
+Select EMPLOYEE_DETAILS.Age from EMPLOYEE,EMPLOYEE_DETAILS where EMPLOYEE.Emp_Id=EMPLOYEE_DETAILS.Emp_Id and EMPLOYEE.Dept_Name=\'SALES\'

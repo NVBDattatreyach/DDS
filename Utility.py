@@ -100,7 +100,7 @@ def get_attr_list_for_table(table_name):
     if(table_name == 'EMPLOYEE'):
         return ['Emp_Id','Dept_Name']
     if(table_name == 'EMPLOYEE_DETAILS'):
-        return ['Emp_Id']
+        return ['Emp_Id', 'Age']
     return '*'
 
 def get_table_name(attribute, from_clause, attribute_table_map): 
@@ -201,7 +201,10 @@ def get_optimized_tree(root, from_clause, attribute_table_map, table_attr_map):
         
         for i, child in enumerate(root.children):
             updated_child = get_optimized_tree(child, from_clause, attribute_table_map, table_attr_map)
-            if(updated_child.data == root.data):
+            updated_child_type = updated_child.data.split(' ',1)[0]
+            root_type = root.data.split(' ')[0]
+            if(updated_child_type == root_type):
+                root.data = updated_child.data
                 continue
             root.children[i] = updated_child
             root.children[i].parent = root

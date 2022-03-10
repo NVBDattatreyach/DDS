@@ -21,13 +21,14 @@ def parse_query(query):
     
     
     for token in parsed_tokens:
+        # print('token:', token, 'type:', type(token))
         if(isinstance(token, sqlparse.sql.Token)):
             if(token.value.lower() == 'select'):
                 clause_name = 'select'
             elif(token.value.lower() == 'from'):
                 clause_name = 'from'
             elif(token.value == '*'):
-                select_tokens.append(token.value)
+                clause_dict['select'].append(token.value)
             elif(token.value.lower() == 'group by'):
                 clause_name = 'group by'
             elif(token.value.lower() == 'having'):
@@ -35,9 +36,49 @@ def parse_query(query):
             
 
         if(isinstance(token, sqlparse.sql.Where)):
+            cur_concat = None
+            prev_condn = None
+            condition_concat = {}
+            condition_concat['and'] = []
+            condition_concat['or'] = []
+
             for condition in token.tokens:
                 if isinstance(condition, sqlparse.sql.Comparison):
                     clause_dict['where'].append(condition)
+                    prev_condn = condition
+                elif(condition.value.lower() == 'and'):
+                    if(cur_concat!=None):
+                        # print('key:',cur_concat, 'token lst:', token_lst)
+                        condn = sqlparse.sql.Comparison(token_lst)
+                        clause_dict['where'].append(condn)
+                        condition_concat[cur_concat].append(condn)
+                        prev = condn
+                    
+                    condition_concat['and'].append(prev_condn)
+                    token_lst = []
+                    cur_concat = 'and'
+                elif(condition.value.lower() == 'or'):
+                    if(cur_concat!=None):
+                        # print('key:',cur_concat, 'token lst:', token_lst)
+                        condn = sqlparse.sql.Comparison(token_lst)
+                        clause_dict['where'].append(condn)
+                        condition_concat[cur_concat].append(condn)
+                        prev_condn = condn
+                    condition_concat['or'].append(prev_condn)
+                    token_lst = []
+                    cur_concat = 'or'
+                elif(condition.value.lower() == ' ' or condition.value.lower() == 'where'):
+                    continue
+                else:
+                    # print('this condn:', condition)
+                    token_lst.append(condition)
+            if(cur_concat!=None):
+                print('key:',cur_concat, 'token lst:', token_lst)
+                condn = sqlparse.sql.Comparison(token_lst)
+                clause_dict['where'].append(condn)
+                condition_concat[cur_concat].append(condn)
+            
+                
 
         if(isinstance(token, sqlparse.sql.Identifier)):
             if(clause_name == 'select'):
@@ -67,4 +108,5 @@ def parse_query(query):
     if(valid_group_by(clause_dict['group by'], clause_dict['functions']) == False):
         print('not a valid query')
     
-    return clause_dict
+    # print('concn_concat ===', condition_concat)
+    return clause_dict, condition_concat

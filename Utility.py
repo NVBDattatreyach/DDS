@@ -1,5 +1,5 @@
 # from main import attribute_table_map
-
+import re
 # input => direct query, join query
 class Tree:
     def __init__(self):
@@ -106,7 +106,7 @@ def get_attr_list_for_table(table_name):
     if(table_name == 'StarsIn'):
         return ['movieTitle', 'movieYear', 'starName']
     if(table_name == 'EMPLOYEE'):
-        return ['Emp_Id','Dept_Name']
+        return ['Emp_Id','Dept_Name', 'location']
     if(table_name == 'EMPLOYEE_DETAILS'):
         return ['Emp_Id', 'Age']
     return '*'
@@ -189,9 +189,12 @@ def get_optimized_tree(root, from_clause, attribute_table_map, table_attr_map):
                     query = query.split('(')[1].split(')')[0]
                 attr_list.append(query)
             elif(query_type=='select' or query_type=='join'):
-                left_operand, right_operand = split_query(query)
-                attr_list.append(left_operand.strip())
-                attr_list.append(right_operand.strip())
+                queries = re.split(' and | or ', query)
+                for q in queries:
+                    print('queries:', q)
+                    left_operand, right_operand = split_query(q)
+                    attr_list.append(left_operand.strip())
+                    attr_list.append(right_operand.strip())
             # elif(query_type=='group'):
             #     query = root.data.lower().split('group by')[1]
             #     # print('query =', query)
@@ -264,3 +267,10 @@ def valid_group_by(group_by_clause, functions):
             return False
     
     return True
+
+
+def find_concat_keyword(condition_concat_and, this_query, prev_query):
+    q_values = [x.value for x in condition_concat_and]
+    if(this_query in q_values and prev_query in q_values):
+        return True
+    return False

@@ -4,14 +4,14 @@ from QueryParser import parse_query
 
 
 
-def decompose_query(clause_dict, attribute_table_map):
+def decompose_query(clause_dict, condition_concat, attribute_table_map):
 
     join_query = []
     direct_query = []
     direct_query_nodes = []
     join_query_nodes = []
     direct_query = {}
-    condition_concat = None
+    # condition_concat = None
 
     select_clause = clause_dict['select']
     from_clause = clause_dict['from']
@@ -28,7 +28,7 @@ def decompose_query(clause_dict, attribute_table_map):
 
         if(len(where_clause) == 0):
             return None
-        
+        print('condn:', condition, 'type:', type(condition))
         left_part, comparison, right_part = break_query(condition)
 
         if(isinstance(right_part, sqlparse.sql.Parenthesis)):
@@ -47,8 +47,27 @@ def decompose_query(clause_dict, attribute_table_map):
             direct_query[table_name].append(condition.value)
     
     for table_name, queries in direct_query.items():
-        queries = ','.join(queries)
-        direct_query_node = build_tree_from_direct_query(table_name, queries)
+        # queries = ','.join(queries)
+        print('--------- and -----------')
+        for condn in condition_concat['and']:
+            print(condn.value)
+        print('--------- or -----------')
+        for condn in condition_concat['or']:
+            print(condn.value)
+        query = None
+        for idx, q in enumerate(queries):
+            if(idx == 0):
+                query = q
+                prev = q
+            elif(find_concat_keyword(condition_concat['and'], q, prev)):
+                query = query + ' and ' + q
+                prev = q
+            else:
+                query = query + ' or ' + q
+            print('this Q ===', query)
+            
+            
+        direct_query_node = build_tree_from_direct_query(table_name, query)
         direct_query_nodes.append(direct_query_node)
     
     for condition in where_clause:

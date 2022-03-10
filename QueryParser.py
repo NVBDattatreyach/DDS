@@ -18,12 +18,8 @@ def parse_query(query):
     clause_dict['group by'] = []
     clause_dict['having'] = []
     clause_dict['functions'] = []
-    # select_tokens = []
-    # from_clause = []
-    # where_clause = []
-    # group_by_clause = []
-    # having_clause = []
-    # functions = []
+    
+    
     for token in parsed_tokens:
         if(isinstance(token, sqlparse.sql.Token)):
             if(token.value.lower() == 'select'):

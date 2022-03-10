@@ -4,7 +4,7 @@ from QueryParser import parse_query
 
 
 
-def decompose_query(select_clause, from_clause, where_clause, group_by_clause, attribute_table_map):
+def decompose_query(clause_dict, attribute_table_map):
 
     join_query = []
     direct_query = []
@@ -13,9 +13,16 @@ def decompose_query(select_clause, from_clause, where_clause, group_by_clause, a
     direct_query = {}
     condition_concat = None
 
+    select_clause = clause_dict['select']
+    from_clause = clause_dict['from']
+    where_clause = clause_dict['where']
+    group_by_clause = clause_dict['group by']
+    having_clause = clause_dict['having']
+
     print('select_clause', select_clause)
     print('from_clause', from_clause)
     print('where_clause', where_clause)
+    print('having', having_clause)
 
     for condition in where_clause:
 
@@ -94,5 +101,5 @@ def decompose_query(select_clause, from_clause, where_clause, group_by_clause, a
         query = ','.join(table for table in from_clause)
         join_query_nodes.append(build_tree_from_join_query(query, children_list, clause='cartesian product '))
     
-    root = add_root(select_clause, join_query_nodes, direct_query_nodes, group_by_clause)
+    root = add_root(select_clause, join_query_nodes, direct_query_nodes, group_by_clause, having_clause)
     return root 

@@ -26,23 +26,29 @@ def build_tree_from_join_query(query, children_list, clause='join '):
         child.parent = node
     return node
 
-def add_root(select_tokens, join_query_nodes, direct_query_nodes, group_by_clause):
+def add_root(select_tokens, join_query_nodes, direct_query_nodes, group_by_clause, having_clause):
     
     final_project_node = Tree()
     final_project_node.data = 'project '+','.join(token for token in select_tokens)
     cur_node = final_project_node
 
+    if(len(having_clause) > 0):
+        having_node = Tree()
+        having_node.data = 'having '+','.join(group_by_clause)
+        cur_node.children.append(having_node)
+        having_node.parent = cur_node
+        cur_node = having_node
+
     if(len(group_by_clause) > 0):
         gp_by_node = Tree()
         gp_by_node.data = 'group by '+','.join(group_by_clause)
-        final_project_node.children.append(gp_by_node)
-        gp_by_node.parent = final_project_node
+        cur_node.children.append(gp_by_node)
+        gp_by_node.parent = cur_node
         cur_node = gp_by_node
     
     for join_query_node in join_query_nodes:
         cur_node.children.append(join_query_node)
         join_query_node.parent = cur_node
-    print('len(dqn):', len(direct_query_nodes), 'contents:', direct_query_nodes)
     for direct_query_node in direct_query_nodes:
         cur_node.children.append(direct_query_node)
         direct_query_node.parent = cur_node
@@ -77,6 +83,8 @@ def get_attribute_to_table_mapping(select_clause, from_clause):
         else:
             for table_name in from_clause:
                 attr_list = get_attr_list_for_table(table_name)
+                if('(' in attribute):
+                    attribute = (attribute.split('(')[1])[:-1]
                 if(attribute in attr_list):
                     attribute_table_name_map[attribute] = table_name
                     break
@@ -115,6 +123,7 @@ def get_table_name(attribute, from_clause, attribute_table_map):
                 table_name = res[attribute]
             else:
                 table_name = None
+        attribute_table_map[attribute] = table_name    
     
     return table_name
 
@@ -176,11 +185,22 @@ def get_optimized_tree(root, from_clause, attribute_table_map, table_attr_map):
         attr_list = []
         for query in query_list:
             if(query_type == 'project'):
+                if('(' in query):
+                    query = query.split('(')[1].split(')')[0]
                 attr_list.append(query)
             elif(query_type=='select' or query_type=='join'):
                 left_operand, right_operand = split_query(query)
                 attr_list.append(left_operand.strip())
                 attr_list.append(right_operand.strip())
+            # elif(query_type=='group'):
+            #     query = root.data.lower().split('group by')[1]
+            #     # print('query =', query)
+            #     if('(' in query):
+            #         query = query[1:-1]
+            #     q_list = query.split(',')
+            #     # print('q_list:', q_list)
+            #     for q in q_list:
+            #         attr_list.append(q.strip())
 
         for attr in attr_list:
             if(attr == '*'):
@@ -212,16 +232,19 @@ def get_optimized_tree(root, from_clause, attribute_table_map, table_attr_map):
         return root
 
 def get_child_node(given_table_name, attribute_table_map):
+    attributes = []
     for attr, table_name in attribute_table_map.items():
         if(given_table_name == table_name):
-            node = build_tree_from_direct_query(given_table_name, attr, clause='project ')
-            return node
-    node = build_tree_from_direct_query(given_table_name, '*', clause='project ')
+            attributes.append(attr)
+    if(len(attributes) == 0):
+        attributes.append('*')
+    
+    queries = ','.join(attr for attr in attributes)
+    node = build_tree_from_direct_query(given_table_name, queries, clause='project ')
     return node
 
 def valid_group_by(group_by_clause, functions):
-    # print('gp_attr:', group_by_clause)
-    # gp_attrs = (group_by_clause.split(' ', 1)[1]).split(',')
+
     func_attrs_map = {}
     for func in functions:
         for token in func:

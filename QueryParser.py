@@ -18,6 +18,10 @@ def parse_query(query):
     clause_dict['group by'] = []
     clause_dict['having'] = []
     clause_dict['functions'] = []
+
+    condition_concat = {}
+    condition_concat['and'] = []
+    condition_concat['or'] = []
     
     
     for token in parsed_tokens:
@@ -38,13 +42,12 @@ def parse_query(query):
         if(isinstance(token, sqlparse.sql.Where)):
             cur_concat = None
             prev_condn = None
-            condition_concat = {}
-            condition_concat['and'] = []
-            condition_concat['or'] = []
 
             for condition in token.tokens:
                 if isinstance(condition, sqlparse.sql.Comparison):
                     clause_dict['where'].append(condition)
+                    if(cur_concat!=None):
+                        condition_concat[cur_concat].append(condition)
                     prev_condn = condition
                 elif(condition.value.lower() == ' ' or condition.value.lower() == 'where'):
                     continue

@@ -48,12 +48,12 @@ def decompose_query(clause_dict, condition_concat, attribute_table_map):
     
     for table_name, queries in direct_query.items():
         # queries = ','.join(queries)
-        # print('--------- and -----------')
-        # for condn in condition_concat['and']:
-        #     print(condn.value)
-        # print('--------- or -----------')
-        # for condn in condition_concat['or']:
-        #     print(condn.value)
+        print('--------- and -----------')
+        for condn in condition_concat['and']:
+            print(condn.value)
+        print('--------- or -----------')
+        for condn in condition_concat['or']:
+            print(condn.value)
         query = None
         for idx, q in enumerate(queries):
             if(idx == 0):

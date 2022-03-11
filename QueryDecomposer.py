@@ -28,7 +28,7 @@ def decompose_query(clause_dict, condition_concat, attribute_table_map):
 
         if(len(where_clause) == 0):
             return None
-        print('condn:', condition, 'type:', type(condition))
+        # print('condn:', condition, 'type:', type(condition))
         left_part, comparison, right_part = break_query(condition)
 
         if(isinstance(right_part, sqlparse.sql.Parenthesis)):
@@ -48,12 +48,12 @@ def decompose_query(clause_dict, condition_concat, attribute_table_map):
     
     for table_name, queries in direct_query.items():
         # queries = ','.join(queries)
-        print('--------- and -----------')
-        for condn in condition_concat['and']:
-            print(condn.value)
-        print('--------- or -----------')
-        for condn in condition_concat['or']:
-            print(condn.value)
+        # print('--------- and -----------')
+        # for condn in condition_concat['and']:
+        #     print(condn.value)
+        # print('--------- or -----------')
+        # for condn in condition_concat['or']:
+        #     print(condn.value)
         query = None
         for idx, q in enumerate(queries):
             if(idx == 0):
@@ -64,7 +64,7 @@ def decompose_query(clause_dict, condition_concat, attribute_table_map):
                 prev = q
             else:
                 query = query + ' or ' + q
-            print('this Q ===', query)
+            # print('this Q ===', query)
             
             
         direct_query_node = build_tree_from_direct_query(table_name, query)

@@ -4,7 +4,7 @@ from Utility import *
 # import localization as Loc
 
 
-clause_dict, condition_concat = parse_query('Select * from EMPLOYEE where Dept_Name=\'Sales\' and location=\'Hyd\' or location=\'DEL\'')
+clause_dict, condition_concat = parse_query('Select * from EMPLOYEE where EMPLOYEE.Dept_Name=\'Sales\' and EMPLOYEE.Loc_Id=\'Hyd\'')
 attribute_table_map = get_attribute_to_table_mapping(clause_dict['select'], clause_dict['from'])
 # print('MAIN:', condition_concat)
 root = decompose_query(clause_dict, condition_concat, attribute_table_map)

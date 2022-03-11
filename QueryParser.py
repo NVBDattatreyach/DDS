@@ -46,6 +46,8 @@ def parse_query(query):
                 if isinstance(condition, sqlparse.sql.Comparison):
                     clause_dict['where'].append(condition)
                     prev_condn = condition
+                elif(condition.value.lower() == ' ' or condition.value.lower() == 'where'):
+                    continue
                 elif(condition.value.lower() == 'and'):
                     if(cur_concat!=None):
                         # print('key:',cur_concat, 'token lst:', token_lst)
@@ -67,13 +69,11 @@ def parse_query(query):
                     condition_concat['or'].append(prev_condn)
                     token_lst = []
                     cur_concat = 'or'
-                elif(condition.value.lower() == ' ' or condition.value.lower() == 'where'):
-                    continue
                 else:
                     # print('this condn:', condition)
                     token_lst.append(condition)
-            if(cur_concat!=None):
-                print('key:',cur_concat, 'token lst:', token_lst)
+            if(cur_concat!=None and len(token_lst)>0):
+                # print('key:',cur_concat, 'token lst:', token_lst)
                 condn = sqlparse.sql.Comparison(token_lst)
                 clause_dict['where'].append(condn)
                 condition_concat[cur_concat].append(condn)

@@ -105,10 +105,11 @@ def localize(optimized_tree):
                     frag_satisfy=True
                     for complex_predicate in select_predicates_list:
                         complex_predicate_satisfy=False
-                        simple_predicate_satisfy=True
+                        
                         if frag_satisfy==True:
-                            simple_predicates_list=complex_predicate.split(" OR ")
+                            simple_predicates_list=complex_predicate.split(" or ")
                             for simple_predicate in simple_predicates_list:
+                                simple_predicate_satisfy=True
                                 col1,op1,val1=parseCondition(simple_predicate)
                                 for predicate in cur_predicates:
                                     col2,op2,val2=parseCondition(predicate)

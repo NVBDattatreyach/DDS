@@ -47,7 +47,7 @@ def parse_query(query):
                 
                 if(condition.value.lower() == ' ' or condition.value.lower() == 'where'):
                     continue
-                print('CONDN ---', condition.value)
+                # print('CONDN ---', condition.value)
                 if isinstance(condition, sqlparse.sql.Comparison):
                     clause_dict['where'].append(condition)
                     if(cur_concat!=None):

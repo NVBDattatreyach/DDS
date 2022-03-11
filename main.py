@@ -3,8 +3,9 @@ from QueryDecomposer import decompose_query
 from Utility import *
 # import localization as Loc
 
+query_to_alias={}
 
-clause_dict, condition_concat = parse_query('Select * from EMPLOYEE where EMPLOYEE.Dept_Name=\'SALES\' or EMPLOYEE.Loc_Id=\'HYD\' and EMPLOYEE.Dept_Name=\'ADMIN\'')
+clause_dict, condition_concat = parse_query('Select * from EMPLOYEE,EMPLOYEE_DETAILS,WORKS_ON where EMPLOYEE.Emp_Id=EMPLOYEE_DETAILS.Emp_Id or EMPLOYEE.Emp_Id=WORKS_ON.Emp_Id')
 attribute_table_map = get_attribute_to_table_mapping(clause_dict['select'], clause_dict['from'])
 # print('MAIN:', condition_concat)
 root = decompose_query(clause_dict, condition_concat, attribute_table_map)

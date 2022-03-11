@@ -2,7 +2,7 @@ from Utility import *
 import sqlparse
 from QueryParser import parse_query
 
-
+from DataStructure import query_to_alias
 
 def decompose_query(clause_dict, condition_concat, attribute_table_map):
 
@@ -46,14 +46,15 @@ def decompose_query(clause_dict, condition_concat, attribute_table_map):
                 direct_query[table_name] = []
             direct_query[table_name].append(condition.value)
     
+    print('--------- and -----------')
+    for condn in condition_concat['and']:
+        print(condn.value)
+    print('--------- or -----------')
+    for condn in condition_concat['or']:
+        print(condn.value)
+
     for table_name, queries in direct_query.items():
         # queries = ','.join(queries)
-        print('--------- and -----------')
-        for condn in condition_concat['and']:
-            print(condn.value)
-        print('--------- or -----------')
-        for condn in condition_concat['or']:
-            print(condn.value)
         query = None
         for idx, q in enumerate(queries):
             if(idx == 0):
@@ -104,6 +105,21 @@ def decompose_query(clause_dict, condition_concat, attribute_table_map):
                 right_node = get_child_node(rhs_table, attribute_table_map)
             join_query_node = build_tree_from_join_query(condition.value, [left_node, right_node])
             join_query_nodes.append(join_query_node)
+    
+    join_nodes = []
+    for idx, join_query_node in enumerate(join_query_nodes):
+        # print('type:', type(join_query_node), type(idx))
+        if(idx == 0):
+            query = join_query_node
+            prev = join_query_node
+        elif(find_concat_keyword(condition_concat['and'], join_query_node.data.split('join ',1)[1], prev.data.split('join ',1)[1])):
+            query = query_to_alias[join_query_node.data] + ' INTERSECT ' + query_to_alias[prev.data]
+            join_nodes.append(build_tree_from_join_query(query, [join_query_node, prev], ''))
+            prev = join_query_node
+        else:
+            query = query_to_alias[join_query_node.data] + ' UNION ' + query_to_alias[prev.data]
+            join_nodes.append(build_tree_from_join_query(query, [join_query_node, prev], ''))
+            prev = join_query_node
         
         
     for query in direct_query_nodes:
@@ -119,7 +135,11 @@ def decompose_query(clause_dict, condition_concat, attribute_table_map):
             child_node.data = table
             children_list.append(child_node)
         query = ','.join(table for table in from_clause)
-        join_query_nodes.append(build_tree_from_join_query(query, children_list, clause='cartesian product '))
+        if(len(from_clause)>1):
+            join_query_nodes.append(build_tree_from_join_query(query, children_list, clause='cartesian product '))
+    
+    if(len(join_nodes)>0):
+        join_query_nodes = join_nodes
     
     root = add_root(select_clause, join_query_nodes, direct_query_nodes, group_by_clause, having_clause)
     return root 

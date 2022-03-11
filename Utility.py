@@ -1,5 +1,7 @@
 # from main import attribute_table_map
 import re
+
+from DataStructure import query_to_alias
 # input => direct query, join query
 class Tree:
     def __init__(self):
@@ -18,9 +20,11 @@ def build_tree_from_direct_query(table_name, queries, clause='select '):
 
     return parent_node
 
-def build_tree_from_join_query(query, children_list, clause='join '):
+def build_tree_from_join_query(query, children_list, clause='join ', COUNT=[0]):
     node = Tree()
     node.data = clause+query
+    query_to_alias[node.data] = 't{}'.format(COUNT[0])
+    COUNT[0]+=1
     for child in children_list:
         node.children.append(child)
         child.parent = node
@@ -61,7 +65,10 @@ def print_tree(root, space_count=1):
         return
     for i in range(0, space_count):
         print(' ', end='')
-    print('-',root.data)
+    if(root.data in query_to_alias):
+        print('-', root.data+' as '+query_to_alias[root.data])
+    else:
+        print('-',root.data)
     for child in root.children:
         print_tree(child, space_count+1)
 
@@ -115,6 +122,7 @@ def get_table_name(attribute, from_clause, attribute_table_map):
     if('.' in attribute):
         table_name = (attribute.split('.'))[0]
     else:
+        attribute = attribute.split('as')[0]
         if(attribute in attribute_table_map):
             table_name = attribute_table_map[attribute]
         else:
@@ -153,6 +161,7 @@ def get_optimized_tree(root, from_clause, attribute_table_map, table_attr_map):
                         if(table_name not in table_attr_map):
                             table_attr_map[table_name] = []
                         table_attr_map[table_name] = '*'
+                    table_names = from_clause
                     break
                 table_name = get_table_name(attr, from_clause, attribute_table_map)
                 table_names.append(table_name)
@@ -168,7 +177,11 @@ def get_optimized_tree(root, from_clause, attribute_table_map, table_attr_map):
                 query = ' '.join(t for t in table_names)
                 new_leaf = build_tree_from_join_query(query, child_nodes, clause='cartesian product ')
             else:
+                # if(len(child_nodes) > 0):
                 new_leaf = child_nodes[0]
+                # else:
+                #     query = ' '.join(t for t in from_clause)
+                #     new_leaf = build_tree_from_direct_query(query, '', clause='')
             return new_leaf
         else:
             table_name = root.data
@@ -191,7 +204,9 @@ def get_optimized_tree(root, from_clause, attribute_table_map, table_attr_map):
             elif(query_type=='select' or query_type=='join'):
                 queries = re.split(' and | or ', query)
                 for q in queries:
-                    print('queries:', q)
+                    # print('queries:', q)
+                    if(q=='UNION' or q=='INTERSECT'):
+                        continue
                     left_operand, right_operand = split_query(q)
                     attr_list.append(left_operand.strip())
                     attr_list.append(right_operand.strip())

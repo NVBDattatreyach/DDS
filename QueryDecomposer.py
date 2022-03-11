@@ -28,7 +28,7 @@ def decompose_query(clause_dict, condition_concat, attribute_table_map):
 
         if(len(where_clause) == 0):
             return None
-        # print('condn:', condition, 'type:', type(condition))
+        print('condn:', condition, 'type:', type(condition))
         left_part, comparison, right_part = break_query(condition)
 
         if(isinstance(right_part, sqlparse.sql.Parenthesis)):
@@ -64,6 +64,7 @@ def decompose_query(clause_dict, condition_concat, attribute_table_map):
                 prev = q
             else:
                 query = query + ' or ' + q
+                prev = q
             # print('this Q ===', query)
             
             

@@ -70,7 +70,10 @@ class TableHandler:
         table_names = self.execute_query(query)
         for table_name in table_names:
             print('table name:', table_name[0])
-            self.get_attributes_for_table(table_name[0])
+            try:
+                self.get_attributes_for_table(table_name[0])
+            except:
+                print('{} d.n.e', table_name[0])
     
     def get_attributes_for_table(self, table_name):
         all_fragments = self.get_all_fragments(table_name)
@@ -78,8 +81,10 @@ class TableHandler:
         frag_id = all_fragments[0][0]
         frag_name = all_fragments[0][2]
         
-        if(frag_type == 'HF' or frag_type == 'DHF'):
+        if(frag_type == 'HF' or frag_type == 'DHF' or frag_type == "NA"):
             remote_conn, remote_cur = self.get_remote_creds(frag_id)
+            if(frag_type == "NA"):
+                frag_name = table_name
             query = 'SELECT * FROM {};'.format(frag_name)
             
             data = remote_cur.execute(query)
@@ -103,6 +108,9 @@ class TableHandler:
                     self.table_attr_map[table_name] = []
                 for col_name in col_name_lst:
                     self.table_attr_map[table_name].append(col_name)
+        
+        # else:
+
 
 table_handler = TableHandler()
 table_handler.get_attributes()

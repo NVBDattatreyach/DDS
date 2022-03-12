@@ -86,6 +86,9 @@ def decompose_query(clause_dict, condition_concat, attribute_table_map):
 
             # scan the direct_query_nodes list to find out the correct pair of nodes to be joined
             for idx, query in enumerate(direct_query_nodes):
+                print('query ======', query)
+                if(query == None):
+                    continue
                 q_l, q_r = split_query(query.data.split(' ',1)[1])
                 table_name = get_table_name(q_l.strip(), from_clause, attribute_table_map)
                 if(table_name == lhs_table):

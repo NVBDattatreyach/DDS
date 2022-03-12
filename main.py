@@ -6,7 +6,7 @@ from TableHandler import *
 
 query_to_alias={}
 
-clause_dict, condition_concat = parse_query('Select * from EMPLOYEE,EMPLOYEE_DETAILS,WORKS_ON where EMPLOYEE.Emp_Id=EMPLOYEE_DETAILS.Emp_Id and EMPLOYEE.Emp_Id=WORKS_ON.Emp_Id')
+clause_dict, condition_concat = parse_query('Select * from EMPLOYEE,EMPLOYEE_DETAILS,WORKS_ON where EMPLOYEE.Emp_Id=EMPLOYEE_DETAILS.Emp_Id and EMPLOYEE.Emp_Id=WORKS_ON.Emp_Id and EMPLOYEE.Dept_Name=\'SALES\'')
 attribute_table_map = get_attribute_to_table_mapping(clause_dict['select'], clause_dict['from'])
 # print('MAIN:', condition_concat)
 

@@ -113,7 +113,6 @@ def decompose_query(clause_dict, condition_concat, attribute_table_map):
         elif(find_concat_keyword(condition_concat['and'], join_query_node.data.split('join ',1)[1], prev.data.split('join ',1)[1])):
             cur_node_children = cur_node.children
             cur_node.children = [join_query_node]
-            join_query_node.parent = cur_node
 
             all_children = []
             for child in join_query_node.children:
@@ -121,8 +120,9 @@ def decompose_query(clause_dict, condition_concat, attribute_table_map):
             
             for child in cur_node_children:
                 if(child.children[0].data not in all_children):
-                    join_query_node.children.append(child)
+                    cur_node.children.append(child)
 
+            join_query_node.parent = cur_node
             cur_node = join_query_node
             and_node = root
             prev = join_query_node

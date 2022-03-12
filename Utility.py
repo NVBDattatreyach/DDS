@@ -51,8 +51,11 @@ def add_root(select_tokens, join_query_nodes, direct_query_nodes, group_by_claus
         cur_node = gp_by_node
     
     for join_query_node in join_query_nodes:
+        # print('join q node:', join_query_node.data)
         cur_node.children.append(join_query_node)
         join_query_node.parent = cur_node
+        cur_node = join_query_node
+
     for direct_query_node in direct_query_nodes:
         cur_node.children.append(direct_query_node)
         direct_query_node.parent = cur_node
@@ -241,7 +244,7 @@ def get_optimized_tree(root, from_clause, attribute_table_map, table_attr_map):
             updated_child = get_optimized_tree(child, from_clause, attribute_table_map, table_attr_map)
             updated_child_type = updated_child.data.split(' ',1)[0]
             root_type = root.data.split(' ')[0]
-            if(updated_child_type == root_type):
+            if(updated_child_type == root_type and root_type == 'project'):
                 root.data = updated_child.data
                 continue
             root.children[i] = updated_child

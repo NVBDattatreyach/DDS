@@ -1,6 +1,7 @@
 from QueryParser import parse_query
 from QueryDecomposer import decompose_query
 from Utility import *
+from TableHandler import *
 # import localization as Loc
 
 query_to_alias={}
@@ -8,6 +9,7 @@ query_to_alias={}
 clause_dict, condition_concat = parse_query('Select * from EMPLOYEE,EMPLOYEE_DETAILS,WORKS_ON where EMPLOYEE.Emp_Id=EMPLOYEE_DETAILS.Emp_Id and EMPLOYEE.Emp_Id=WORKS_ON.Emp_Id')
 attribute_table_map = get_attribute_to_table_mapping(clause_dict['select'], clause_dict['from'])
 # print('MAIN:', condition_concat)
+
 root = decompose_query(clause_dict, condition_concat, attribute_table_map)
 
 print('########### Normal Tree ###############')

@@ -107,20 +107,36 @@ def decompose_query(clause_dict, condition_concat, attribute_table_map):
             join_query_nodes.append(join_query_node)
     
     join_nodes = []
+    and_node = None
     for idx, join_query_node in enumerate(join_query_nodes):
-        # print('type:', type(join_query_node), type(idx))
         if(idx == 0):
             query = join_query_node
             prev = join_query_node
+            root = join_query_node
+            cur_node = root
         elif(find_concat_keyword(condition_concat['and'], join_query_node.data.split('join ',1)[1], prev.data.split('join ',1)[1])):
-            query = query_to_alias[join_query_node.data] + ' INTERSECT ' + query_to_alias[prev.data]
-            join_nodes.append(build_tree_from_join_query(query, [join_query_node, prev], ''))
+            cur_node_children = cur_node.children
+            cur_node.children = [join_query_node]
+            join_query_node.parent = cur_node
+
+            all_children = []
+            for child in join_query_node.children:
+                all_children.append(child.children[0].data)
+            
+            for child in cur_node_children:
+                if(child.children[0].data not in all_children):
+                    join_query_node.children.append(child)
+
+            cur_node = join_query_node
+            and_node = root
             prev = join_query_node
         else:
             query = query_to_alias[join_query_node.data] + ' UNION ' + query_to_alias[prev.data]
             join_nodes.append(build_tree_from_join_query(query, [join_query_node, prev], ''))
             prev = join_query_node
-        
+
+    if(and_node!=None):
+        join_nodes.append(and_node)    
         
     for query in direct_query_nodes:
         lst = []

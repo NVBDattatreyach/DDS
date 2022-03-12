@@ -1,6 +1,6 @@
 # from main import attribute_table_map
 import re
-
+from TableHandler import table_handler
 # from DataStructure import query_to_alias
 # input => direct query, join query
 class Tree:
@@ -100,8 +100,17 @@ def get_attribute_to_table_mapping(select_clause, from_clause):
     
     return attribute_table_name_map
 
+def execute_query(query, cur):
+    data = cur.execute(query)
+    table_contents = cur.fetchall()
+    output = [list(x) for x in table_contents]
+    
+    return output
 
 def get_attr_list_for_table(table_name):
+    return table_handler.table_attr_map[table_name]
+    '''
+    conn=self.connect('10.3.5.211', 'xavier', 'xmen123')
     if(table_name == 'Emp'):
         return ['sal', 'Eno', 'EMP_ID']
     if(table_name == 'STUDENT'):
@@ -115,11 +124,11 @@ def get_attr_list_for_table(table_name):
     if(table_name == 'StarsIn'):
         return ['movieTitle', 'movieYear', 'starName']
     if(table_name == 'EMPLOYEE'):
-        return ['Emp_Id','Dept_Name', 'location']
+        return ['Emp_Id','Dept_Name', 'Loc_Id', 'DEsgn_Id', 'Reports_To']
     if(table_name == 'EMPLOYEE_DETAILS'):
         return ['Emp_Id', 'Age']
     return '*'
-
+    '''
 
 def get_table_name(attribute, from_clause, attribute_table_map): 
     if('.' in attribute):

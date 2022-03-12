@@ -28,7 +28,6 @@ def decompose_query(clause_dict, condition_concat, attribute_table_map):
 
         if(len(where_clause) == 0):
             return None
-        print('condn:', condition, 'type:', type(condition))
         left_part, comparison, right_part = break_query(condition)
 
         if(isinstance(right_part, sqlparse.sql.Parenthesis)):
@@ -46,15 +45,14 @@ def decompose_query(clause_dict, condition_concat, attribute_table_map):
                 direct_query[table_name] = []
             direct_query[table_name].append(condition.value)
     
-    print('--------- and -----------')
-    for condn in condition_concat['and']:
-        print(condn.value)
-    print('--------- or -----------')
-    for condn in condition_concat['or']:
-        print(condn.value)
+    # print('--------- and -----------')
+    # for condn in condition_concat['and']:
+    #     print(condn.value)
+    # print('--------- or -----------')
+    # for condn in condition_concat['or']:
+    #     print(condn.value)
 
     for table_name, queries in direct_query.items():
-        # queries = ','.join(queries)
         query = None
         for idx, q in enumerate(queries):
             if(idx == 0):
@@ -66,7 +64,6 @@ def decompose_query(clause_dict, condition_concat, attribute_table_map):
             else:
                 query = query + ' or ' + q
                 prev = q
-            # print('this Q ===', query)
             
             
         direct_query_node = build_tree_from_direct_query(table_name, query)
@@ -88,7 +85,6 @@ def decompose_query(clause_dict, condition_concat, attribute_table_map):
             
 
             # scan the direct_query_nodes list to find out the correct pair of nodes to be joined
-            # also assuming that only one attribute is used to join 2 tables
             for idx, query in enumerate(direct_query_nodes):
                 q_l, q_r = split_query(query.data.split(' ',1)[1])
                 table_name = get_table_name(q_l.strip(), from_clause, attribute_table_map)
@@ -117,7 +113,6 @@ def decompose_query(clause_dict, condition_concat, attribute_table_map):
         elif(find_concat_keyword(condition_concat['and'], join_query_node.data.split('join ',1)[1], prev.data.split('join ',1)[1])):
             cur_node_children = cur_node.children
             cur_node.children = [join_query_node]
-            join_query_node.parent = cur_node
 
             all_children = []
             for child in join_query_node.children:
@@ -125,8 +120,9 @@ def decompose_query(clause_dict, condition_concat, attribute_table_map):
             
             for child in cur_node_children:
                 if(child.children[0].data not in all_children):
-                    join_query_node.children.append(child)
+                    cur_node.children.append(child)
 
+            join_query_node.parent = cur_node
             cur_node = join_query_node
             and_node = root
             prev = join_query_node

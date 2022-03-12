@@ -83,9 +83,7 @@ def build_frag_tree():
     result=cursor.fetchall()
     conn.close()
     parent=[None for i in range(len(result)+2)]
-    print(len(parent))
     for row in result:
-        print(row)
         if(row[1]==None):
             parent[row[0]]=row[0]
         else:
@@ -345,9 +343,10 @@ def join_reduction(join_node,frag_tree):
     right=[]
     x=True
     y=True
-    if(join_node.children[0].data=="join"):
+    
+    if(join_node.children[0].data[:4]=="join"):
         x=join_reduction(join_node.children[0],frag_tree)    
-    if(join_node.children[1].data=="join"):
+    if(join_node.children[1].data[:4]=="join"):
         y=join_reduction(join_node.children[1],frag_tree)
     if(x==True and y==True):
         get_fragments_of_subtree(join_node.children[0],left)
@@ -361,13 +360,18 @@ def join_reduction(join_node,frag_tree):
                 frag_id2,frag_name2,frag_type2,table_name2=frag2.split(" ")
                 if(frag_type1=="DHF" or frag_type2=="DHF"):
                     root2=get_root(frag_tree,frag_id2)
+                    
                     x2=get_table_name(root2)
+                    
                     if(x1!=x2):
+                        #print(frag_id1,frag_id2,True)
                         return True
                     else:
                         if(root1==root2):
+                            #print(frag_id1,frag_id2,True)
                             return True
                         else:
+                            #print(frag_id1,frag_id2,False)
                             return False
 
                     
@@ -451,10 +455,15 @@ def localize(optimized_tree):
 
     
     
+    
     first_join=find_join(optimized_tree)
-    print(first_join.children)
+    
+    print(first_join.children[0].data,first_join.children[1].data)
+    
     un=join_distribution(first_join)
+
     childs=un.children.copy()
+    
     print("reduction")
     for child in childs:
         res=join_reduction(child,frag_tree)

@@ -1,3 +1,4 @@
+from logging import root
 from threading import local
 from turtle import right
 from sqlalchemy import true
@@ -17,11 +18,16 @@ def find_leaves(root,leaves):
     else:
         for child in root.children:
             find_leaves(child,leaves)
+def get_root(frag_tree,id):
+    id1=int(id)
+    while(frag_tree[id1]!=id1):
+        id1=frag_tree[id1]
+    return id1
+
 def get_fragmentation(node):
     table_name=node.data
     conn=SC.connect("10.3.5.211")
     query="SELECT Frag_Name,Frag_Type,Frag_Id FROM FRAGMENTS,APPLICATION_TABLE where APPLICATION_TABLE.Table_Name='{}' and FRAGMENTS.Table_Id=APPLICATION_TABLE.Table_Id;".format(table_name)
-    print(query)
     cursor=conn.cursor()
     cursor.execute(query)
     result=cursor.fetchall()
@@ -30,7 +36,6 @@ def get_fragmentation(node):
 def get_primary_key(table_name):
     conn=SC.connect("10.3.5.211")
     query="SELECT Column_Name FROM COLUMNS,APPLICATION_TABLE where APPLICATION_TABLE.Table_Name='{}' and Key_Attribute=true and APPLICATION_TABLE.Table_Id=COLUMNS.Table_Id".format(table_name)
-    print(query)
     cursor=conn.cursor()
     cursor.execute(query)
     result=cursor.fetchall()
@@ -70,6 +75,23 @@ def get_columns_of_fragment(fragment_id):
     conn.close()
     return result
 
+def build_frag_tree():
+    conn=SC.connect("10.3.5.211")
+    query="SELECT Frag_Id,Parent_Id from FRAGMENTS"
+    cursor=conn.cursor()
+    cursor.execute(query)
+    result=cursor.fetchall()
+    conn.close()
+    parent=[None for i in range(len(result)+2)]
+    print(len(parent))
+    for row in result:
+        print(row)
+        if(row[1]==None):
+            parent[row[0]]=row[0]
+        else:
+            parent[row[0]]=row[1]
+    return parent
+
 def horizontal_select_reduction(leaf,result):
     select_predicates_list=[]   #find select predicate to be matched with fragment predicate
     if(leaf.parent.data[:6]=="select" or (leaf.parent.parent!=None and leaf.parent.parent.data[:6]=="select")):
@@ -80,11 +102,11 @@ def horizontal_select_reduction(leaf,result):
             select_predicate_condition=leaf.parent.parent.data[7:]
         select_predicates_list=process_select_predicate(select_predicate_condition,leaf.data)
     un=Tree()
-    un.data="UNION"
+    un.data="union"
     for row in result:
         if(len(select_predicates_list)==0):
             temp=Tree()
-            temp.data=str(row[2])+" "+row[0]
+            temp.data=str(row[2])+" "+row[0]+" "+row[1]+" "+leaf.data
             temp.parent=un
             un.children.append(temp)
         else:
@@ -116,7 +138,7 @@ def horizontal_select_reduction(leaf,result):
                     break
             if(frag_satisfy==True): 
                 temp=Tree()
-                temp.data=str(row[2])+" "+row[0]
+                temp.data=str(row[2])+" "+row[0]+" "+row[1]+" "+leaf.data
                 temp.parent=un
                 un.children.append(temp)
     
@@ -133,37 +155,44 @@ def horizontal_select_reduction(leaf,result):
         if(project_node.parent.data[:6]=="select"):
             select_node=project_node.parent
         if(select_node==None):
-            #projects parent as unions parent
+            
             un.parent=project_node.parent
             un.parent.children.append(un)
-            #unlink project from its parent
+            
             project_node.parent.children.remove(project_node)
-            #make union as projects parent
-            project_node.parent=un
+            
             un_childs=un.children.copy()
             un.children.clear()
-            #unions child is only project node
-            un.children.append(project_node)
-            #remove actual table from query tree
             project_node.children.remove(leaf) 
+            del leaf
             for child in un_childs:
-                child.parent=project_node
-                project_node.children.append(child)
-            
-            
+                local_project=Tree()
+                local_project.data=project_node.data
+                child.parent=local_project
+                local_project.children.append(child)
+                local_project.parent=un
+                un.children.append(local_project)
+            del project_node
             
         else:
             un.parent=select_node.parent
-            select_node.parent.children.remove(select_node)
-            select_node.parent.children.append(un)
+            id=select_node.parent.children.index(select_node)
+            select_node.parent.children[id]=un
             un_childs=un.children.copy()
             un.children.clear()
-            un.children.append(select_node)
-            select_node.parent=un
             project_node.children.remove(leaf)
+            del leaf
             for child in un_childs:
-                child.parent=project_node
-                project_node.children.append(child)
+                local_select=Tree()
+                local_select.data=select_node.data
+                local_project=Tree()
+                local_project.data=project_node.data
+                local_select.parent=un
+                un.children.append(local_select)
+                local_project.parent=local_select
+                local_select.children.append(local_project)
+                child.parent=local_project
+                local_project.children.append(child)
             
 def vertical_reduction(leaf,result):
     pks=get_primary_key(leaf.data)
@@ -174,7 +203,7 @@ def vertical_reduction(leaf,result):
     final_attributes=final_attributes.split(",")
     for row in result:
         temp=Tree()
-        temp.data=str(row[2])+" "+row[0]
+        temp.data=str(row[2])+" "+row[0]+" "+"VF"+" "+leaf.data
         if(final_attributes[0]!='*'):
             columns=get_columns_of_fragment(row[2])
             column_names=[x[0] for x in columns]
@@ -224,38 +253,211 @@ def find_join(root):
         if(temp!=None):
             return temp
     return root
+def duplicate(subtree_root):
+    if(len(subtree_root.children)==0):
+        temp=Tree()
+        temp.data=subtree_root.data
+        temp.children=subtree_root.children
+        return temp
+    else:
+        temp=Tree()
+        temp.data=subtree_root.data
+        for child in subtree_root.children:
+            res=duplicate(child)
+            res.parent=temp
+            temp.children.append(res)
+        return temp
 
 def join_distribution(node):
+    if(node.children[0].data[:4]=="join"):
+        join_distribution(node.children[0])
+    if(node.children[1].data[:4]=="join"):
+        join_distribution(node.children[1])
+    if(node.children[0].data=="union" and node.children[1].data=="union"):
+        un=Tree()
+        un.data="union"
+        un.parent=node.parent
+        idx=node.parent.children.index(node)
+        node.parent.children[idx]=un
+        for child1 in node.children[0].children:
+            for child2 in node.children[1].children:
+                jn=Tree()
+                jn.data=node.data
+                dup1=duplicate(child1)
+                dup2=duplicate(child2)
+                jn.children.append(dup1)
+                jn.children.append(dup2)
+                dup1.parent=jn
+                dup2.parent=jn
+                jn.parent=un
+                un.children.append(jn)
+        return un
+        
 
-    left_frags=[]
-    get_fragments_of_subtree(node.children[0],left_frags)
-    right_frags=[]
-    get_fragments_of_subtree(node.children[1],right_frags)
-
-    if(node.children[0].data.lower()=="union" or node.children[1].data.lower()=="union"):
-        final_joins=[]
-        for l_frag in left_frags:
-            l_frag_id,l_frag_name=l_frag.split(" ")
+    elif(node.children[0].data[:4]=="union"):
+        un=Tree()
+        un.data="union"
+        un.parent=node.parent
+        idx=node.parent.children.index(node)
+        node.parent.children[idx]=un
+        for child1 in node.children[0].children:
+            jn=Tree()
+            jn.data=node.data
+            jn.parent=un
+            dup1=duplicate(child1)
+            dup2=duplicate(node.children[1])
+            dup1.parent=jn
+            dup2.parent=jn
+            un.children.append(jn)
+        return un
+    
+    elif(node.children[1].data[:4]=="union"):
+        un=Tree()
+        un.data="union"
+        un.parent=node.parent
+        idx=node.parent.children.index(node)
+        node.parent.children[idx]=un
+        for child2 in node.children[1].children:
+            jn=Tree()
+            jn.data=node.data
+            jn.parent=un
+            dup1=duplicate(node.children[0])
+            dup2=duplicate(child2)
+            dup1.parent=jn
+            dup2.parent=jn
+            un.children.append(jn)
+        return un
+    else:
+        pass
             
-            for r_frag in right_frags:
-                r_frag_id,r_frag_name=r_frag.split(" ")
-                
 
+def get_table_name(frag_id):
+    conn=SC.connect("10.3.5.211")
+    query="SELECT Table_Id from FRAGMENTS where Frag_Id={}".format(frag_id)
+    cursor=conn.cursor()
+    cursor.execute(query)
+    result=cursor.fetchall()
+    conn.close()
+    return result[0][0]
+
+def join_reduction(join_node,frag_tree):
+    left=[]
+    right=[]
+    x=True
+    y=True
+    if(join_node.children[0].data=="join"):
+        x=join_reduction(join_node.children[0],frag_tree)    
+    if(join_node.children[1].data=="join"):
+        y=join_reduction(join_node.children[1],frag_tree)
+    if(x==True and y==True):
+        get_fragments_of_subtree(join_node.children[0],left)
+        get_fragments_of_subtree(join_node.children[1],right)
+
+        for frag1 in left:
+            frag_id1,frag_name1,frag_type1,table_name1=frag1.split(" ")
+            root1=get_root(frag_tree,frag_id1)
+            x1=get_table_name(root1)
+            for frag2 in right:
+                frag_id2,frag_name2,frag_type2,table_name2=frag2.split(" ")
+                if(frag_type1=="DHF" or frag_type2=="DHF"):
+                    root2=get_root(frag_tree,frag_id2)
+                    x2=get_table_name(root2)
+                    if(x1!=x2):
+                        return True
+                    else:
+                        if(root1==root2):
+                            return True
+                        else:
+                            return False
+
+                    
+                elif(frag_type1=="VF" or frag_type2=="VF"):
+                    return True
+                
+                else:
+                    result1=get_predicates(frag_id1)
+                    result2=get_predicates(frag_id2)
+                    join_predicate=join_node.data[5:]
+                    table1_column,table2_column=join_predicate.split("=")
+                    b1=False
+                    b2=False
+                    b1_predicate=None
+                    b2_predicate=None
+                    if(table1_column[:len(table_name1)+1]==table_name1+"."):
+                        column_name=table1_column[len(table_name1)+2:]
+                        for row in result1:
+                            col,op,val=parseCondition(row[0])
+                            b1=b1 or (col==column_name)
+                            if(b1==True):
+                                b1_predicate=row[0]
+                                break
+                        column_name=table2_column[len(table_name2)+2:]
+                        for row in result2:
+                            col,op,val=parseCondition(row[0])
+                            b2=b2 or (column_name==col)
+                            if(b2==True):
+                                b2_predicate=row[0]
+                                break
+                    else:
+                        column_name=table1_column[len(table_name2)+2:]
+                        for row in result1:
+                            col,op,val=parseCondition(row[0])
+                            b1=b1 or (col==column_name)
+                            if(b1==True):
+                                b1_predicate=row[0]
+                                break
+                        column_name=table2_column[len(table_name1)+2:]
+                        for row in result2:
+                            col,op,val=parseCondition(row[0])
+                            b2=b2 or (col==column_name)
+                            if(b2==True):
+                                b2_predicate=row[0]
+                                break
+                    if(b1 and b2):
+                        col1,op1,val1=parseCondition(b1_predicate)
+                        col2,op2,val2=parseCondition(b2_predicate)
+                        op=predicate_comparison[op1][op2]
+                        if(op==True):
+                            return True
+                        else:
+                            check="{}{}{}".format(val1,op,val2)
+                            return eval(check)
+                    else:
+                        return False
+    elif(x==False and y==True):
+       del join_node.children[0]
+       return False 
+    elif(x==True and y==False):
+        del join_node.children[1]
+        return False
+    else:
+        join_node.children.clear()
+        return False        
 
 def localize(optimized_tree):
     leaves=[]
+    frag_tree=build_frag_tree()
+    
     find_leaves(optimized_tree,leaves)
     for leaf in leaves:
         
         result=get_fragmentation(leaf)
-        print(result)
+        
         if(result[0][1]=='HF' or result[0][1]=='DHF'):  #if a table is fragmented into horizontal fragment
             horizontal_select_reduction(leaf,result)
 
         elif(result[0][1]=='VF'):
             vertical_reduction(leaf,result)
 
-        """
-        first_join=find_join(optimized_tree)
-        join_distribution(first_join)
-        """
+    
+    
+    first_join=find_join(optimized_tree)
+    print(first_join.children)
+    un=join_distribution(first_join)
+    childs=un.children.copy()
+    print("reduction")
+    for child in childs:
+        res=join_reduction(child,frag_tree)
+        if(res==False):
+            un.children.remove(child)
+    

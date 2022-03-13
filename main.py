@@ -3,11 +3,13 @@ from QueryDecomposer import decompose_query
 from Utility import *
 from TableHandler import *
 import localization as Loc
+import sys
 
 query_to_alias={}
 
 
-clause_dict, condition_concat = parse_query('Select Proj_Id, Budget from PROJECT')
+query = sys.argv[1]
+clause_dict, condition_concat = parse_query('{}'.format(query))
 attribute_table_map = get_attribute_to_table_mapping(clause_dict['select'], clause_dict['from'])
 # print('MAIN:', condition_concat)
 

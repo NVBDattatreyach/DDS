@@ -44,7 +44,6 @@ def parse_query(query):
             prev_condn = None
 
             for condition in token.tokens:
-                
                 if(condition.value.lower() == ' ' or condition.value.lower() == 'where'):
                     continue
                 # print('CONDN ---', condition.value)
@@ -75,7 +74,7 @@ def parse_query(query):
                     token_lst = []
                     cur_concat = 'or'
                 else:
-                    # print('this condn:', condition)
+                    print('this condn:', condition)
                     token_lst.append(condition)
             if(cur_concat!=None and len(token_lst)>0):
                 # print('key:',cur_concat, 'token lst:', token_lst)

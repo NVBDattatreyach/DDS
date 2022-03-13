@@ -69,7 +69,7 @@ class TableHandler:
         query = "SELECT Table_Name FROM APPLICATION_TABLE;"
         table_names = self.execute_query(query)
         for table_name in table_names:
-            print('table name:', table_name[0])
+            # print('table name:', table_name[0])
             try:
                 self.get_attributes_for_table(table_name[0])
             except:
@@ -107,7 +107,7 @@ class TableHandler:
             for fragment in all_fragments:
                 frag_id = fragment[0]
                 col_name_lst = self.get_column_names(frag_id)
-                print('col_list:', col_name_lst)
+                # print('col_list:', col_name_lst)
                 if(table_name not in self.table_attr_map):
                     self.table_attr_map[table_name] = []
                 for col_name in col_name_lst:

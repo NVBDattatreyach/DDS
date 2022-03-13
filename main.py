@@ -6,7 +6,7 @@ import localization as Loc
 
 query_to_alias={}
 
-clause_dict, condition_concat = parse_query('Select * from EMPLOYEE where EMPLOYEE.Desgn_Id=1')
+clause_dict, condition_concat = parse_query('Select * from EMPLOYEE,WORKS_ON,PROJECT where EMPLOYEE.Emp_Id=WORKS_ON.Emp_Id and WORKS_ON.Project_Id=PROJECT.Project_Id and EMPLOYEE.Dept_Name=\'SALES\'')
 attribute_table_map = get_attribute_to_table_mapping(clause_dict['select'], clause_dict['from'])
 # print('MAIN:', condition_concat)
 

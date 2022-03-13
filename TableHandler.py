@@ -86,9 +86,13 @@ class TableHandler:
             if(frag_type == "NA"):
                 frag_name = table_name
             query = 'SELECT * FROM {};'.format(frag_name)
-            
-            data = remote_cur.execute(query)
-            table_contents = remote_cur.fetchall()
+            try:
+                data = remote_cur.execute(query)
+                table_contents = remote_cur.fetchall()
+            except:
+                query = 'SELECT * FROM {};'.format(all_fragments[0][2])
+                data = remote_cur.execute(query)
+                table_contents = remote_cur.fetchall()
 
             num_fields = len(remote_cur.description)
             field_names = [i[0] for i in remote_cur.description]

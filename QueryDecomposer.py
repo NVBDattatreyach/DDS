@@ -122,8 +122,13 @@ def decompose_query(clause_dict, condition_concat, attribute_table_map):
                 all_children.append(child.children[0].data)
             
             for child in cur_node_children:
+                print('child:', child.data)
                 if(child.children[0].data not in all_children):
                     cur_node.children.append(child)
+                elif(child.data.startswith('select')):
+                    for idx, c in enumerate(join_query_node.children):
+                        if(join_query_node.children[idx].children[0].data == child.children[0].data):
+                            join_query_node.children[idx] = child
 
             join_query_node.parent = cur_node
             cur_node = join_query_node

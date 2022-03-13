@@ -91,6 +91,8 @@ def build_frag_tree():
     return parent
 
 def horizontal_select_reduction(leaf,result):
+    print(leaf.data)
+    
     select_predicates_list=[]   #find select predicate to be matched with fragment predicate
     if(leaf.parent.data[:6]=="select" or (leaf.parent.parent!=None and leaf.parent.parent.data[:6]=="select")):
         select_predicate_condition=""
@@ -103,6 +105,7 @@ def horizontal_select_reduction(leaf,result):
     un.data="union"
     for row in result:
         if(len(select_predicates_list)==0):
+            
             temp=Tree()
             temp.data=str(row[2])+" "+row[0]+" "+row[1]+" "+leaf.data
             temp.parent=un
@@ -157,7 +160,7 @@ def horizontal_select_reduction(leaf,result):
         elif(project_node.parent.data[:6]=="select"):
             select_node=project_node.parent
             if(select_node==None):
-                
+                print("hi1")
                 un.parent=project_node.parent
                 un.parent.children.append(un)
                 
@@ -195,6 +198,23 @@ def horizontal_select_reduction(leaf,result):
                     local_select.children.append(local_project)
                     child.parent=local_project
                     local_project.children.append(child)
+        else:
+            un.parent=project_node.parent
+            idx=un.parent.children.index(project_node)
+            
+
+            un.parent.children[idx]=un
+            childs=un.children.copy()
+            un.children.clear()
+            for child in childs:
+                local_project=Tree()
+                local_project.data=project_node.data
+                child.parent=local_project
+                local_project.children.append(child)
+                un.children.append(local_project)
+
+
+
             
 def vertical_reduction(leaf,result):
     pks=get_primary_key(leaf.data)
@@ -377,6 +397,7 @@ def join_reduction(join_node,frag_tree):
             root1=get_root(frag_tree,frag_id1)
             x1=get_table_id(root1)
             for frag2 in right:
+                print(right)
                 frag_id2,frag_name2,frag_type2,table_name2=frag2.split(" ")
                 if(join_node.data.find(table_name1)!=-1 and join_node.data.find(table_name2)!=-1):
                     if(frag_type1=="DHF" or frag_type2=="DHF"):
@@ -470,6 +491,13 @@ def localize(optimized_tree):
 
         elif(result[0][1]=='VF'):
             vertical_reduction(leaf,result)
+        
+        else:
+            new_leaf=Tree()
+            new_leaf.data=str(result[0][2])+" "+result[0][0]+" "+result[0][1]+" "+leaf.data
+            new_leaf.parent=leaf.parent
+            idx=leaf.parent.children.index(leaf)
+            leaf.parent.children[idx]=new_leaf
 
     
     
@@ -482,4 +510,3 @@ def localize(optimized_tree):
             res=join_reduction(child,frag_tree)
             if(res==False):
                 un.children.remove(child)
-    

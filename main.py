@@ -8,8 +8,10 @@ import sys
 query_to_alias={}
 
 
-query = sys.argv[1]
-clause_dict, condition_concat = parse_query('{}'.format(query))
+# query = sys.argv[1]
+# print('{}'.format(query))
+# clause_dict, condition_concat = parse_query("{}".format(query))
+clause_dict, condition_concat = parse_query("SELECT * FROM EMPLOYEE GROUP BY EMPLOYEE.Dept_Name")
 attribute_table_map = get_attribute_to_table_mapping(clause_dict['select'], clause_dict['from'])
 # print('MAIN:', condition_concat)
 

@@ -33,7 +33,7 @@ def parse_query(query):
                 clause_name = 'from'
             elif(token.value == '*'):
                 clause_dict['select'].append(token.value)
-            elif(token.value.lower() == 'group by'):
+            elif(token.value.lower() == 'group'):
                 clause_name = 'group by'
             elif(token.value.lower() == 'having'):
                 clause_name = 'having'
@@ -112,5 +112,7 @@ def parse_query(query):
     if(valid_group_by(clause_dict['group by'], clause_dict['functions']) == False):
         print('not a valid query')
     
+    # for key, val in clause_dict.items():
+    #     print(key,' => ', val)
     # print('concn_concat ===', condition_concat)
     return clause_dict, condition_concat

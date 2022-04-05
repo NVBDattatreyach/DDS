@@ -22,12 +22,14 @@ def decompose_query(clause_dict, condition_concat, attribute_table_map):
     print('select_clause', select_clause)
     print('from_clause', from_clause)
     print('where_clause', where_clause)
+    print('group_by', group_by_clause)
     print('having', having_clause)
 
     for condition in where_clause:
 
         if(len(where_clause) == 0):
             return None
+        print('condition ---', condition)
         left_part, comparison, right_part = break_query(condition)
 
         if(isinstance(right_part, sqlparse.sql.Parenthesis)):
@@ -157,6 +159,9 @@ def decompose_query(clause_dict, condition_concat, attribute_table_map):
         query = ','.join(table for table in from_clause)
         if(len(from_clause)>1):
             join_query_nodes.append(build_tree_from_join_query(query, children_list, clause='cartesian product '))
+        # elif(len(from_clause)==1):
+        #     select_clause.append(from_clause[0])
+            # direct_query_nodes.append(build_tree_from_direct_query(from_clause[0], '*'))
     
     if(len(join_nodes)>0):
         join_query_nodes = join_nodes

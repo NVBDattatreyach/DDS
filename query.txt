@@ -1,0 +1,24 @@
+Select Eno From Emp, Dept Where Emp.sal>50 and Dept.loc='Hyd' and Emp.Dno=Dept.Dno
+Select * from Student Where classID = (Select id from class where noofstudents = (select max(noofstudents) from class))
+SELECT Student_ID FROM STUDENT
+SELECT * FROM STUDENT
+SELECT EMP_ID, NAME FROM EMPLOYEE_TBL WHERE EMP_ID = '0000'
+SELECT title FROM ParamountMovies WHERE year = 1979
+Select startName, studioName from startsIn, Movies where year=1996 and startsIn.title=Movies.title
+Select movieYear, max(birthdate) from MovieStar, StarsIn where name = startName group by movieYear
+Select * from EMPLOYEE , EMPLOYEE_DETAILS where EMPLOYEE.Emp_Id=EMPLOYEE_DETAILS.Emp_Id and EMPLOYEE.Dept_Name=\'SALES\'
+Select EMPLOYEE_DETAILS.Age from EMPLOYEE,EMPLOYEE_DETAILS where EMPLOYEE.Emp_Id=EMPLOYEE_DETAILS.Emp_Id and EMPLOYEE.Dept_Name=\'SALES\'
+
+
+
+
+
+SELECT DISTINCT m l.m o v ieT itle, ml.movieYear
+FROM S ta r s ln ml
+WHERE ml.movieYear - 40 <= (
+SELECT A V G(birthdate)
+FROM S ta rs ln m2, M ovieStar s
+WHERE m2.starName = s .name AND
+m l.m o v ieT itle = m2.m ov ieT itle AND
+ml.movieYear = m2.movieYear
+);

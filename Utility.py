@@ -201,16 +201,18 @@ def get_optimized_tree(root, from_clause, attribute_table_map, table_attr_map):
                     table_name = table_name.split('.')[0]
             else:
                 table_name = root.data
-            print('table name:', table_name)
+            # print('table name:', table_name)
             if(table_name in table_attr_map):
                 queries = ','.join(attr for attr in table_attr_map[table_name])
             else:
                 queries = '*' # redundant but lets keep it for corner cases
             new_leaf = build_tree_from_direct_query(table_name, queries, clause='project ')
-            root.children.append(new_leaf)
-            new_leaf.parent = root
+            if(root.data.startswith('group')):
+                root.children.append(new_leaf)
+                new_leaf.parent = root
+                new_leaf = root
             
-            return root
+            return new_leaf
     else:
         query_list = (root.data.split(' ',1))[1].split(',')
         query_type = root.data.split()[0]

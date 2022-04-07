@@ -1,6 +1,7 @@
 # from QueryParser import parse_query
 from QueryP import QueryParser
 from QueryD import QueryDecomposer
+from ExecutionPlanner import ExecutionPlanner
 from Utility import *
 from TableHandler import *
 import localization as Loc
@@ -36,3 +37,6 @@ print('#############################################')
 Loc.localize(optimized_tree)
 print("After localization")
 print_tree(optimized_tree)
+
+execution_planner = ExecutionPlanner()
+plan = execution_planner.prepare_execution_plan(optimized_tree)

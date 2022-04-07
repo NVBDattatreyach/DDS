@@ -40,7 +40,7 @@ class QueryParser:
     def get_clauses(self):
         clause_name = None
         for token in self.parsed_tokens:
-            print(token.value, type(token))
+            # print(token.value, type(token))
             
             if(isinstance(token, sqlparse.sql.Token)):
                 if(token.value.lower() == 'select'):
@@ -89,7 +89,7 @@ class QueryParser:
                         token_lst = []
                         cur_concat = 'or'
                     else:
-                        print('this condn:', condition)
+                        # print('this condn:', condition)
                         token_lst.append(condition)
                 if(cur_concat!=None and len(token_lst)>0):
                     # print('key:',cur_concat, 'token lst:', token_lst)

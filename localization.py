@@ -84,6 +84,7 @@ def build_frag_tree():
     conn.close()
     parent=[None for i in range(len(result)+2)]
     for row in result:
+        #print(row)
         if(row[1]==None):
             parent[row[0]]=row[0]
         else:
@@ -229,12 +230,14 @@ def vertical_reduction(leaf,result):
         temp.data=str(row[2])+" "+row[0]+" "+"VF"+" "+leaf.data
         if(final_attributes[0]!='*'):
             columns=get_columns_of_fragment(row[2])
-            column_names=[leaf.data+"."+x[0] for x in columns]
-            print("column names",column_names)
+            column_names=[x[0] for x in columns]
+            #print("column names",column_names)
             local_columns=set(join_attribute)
             for column in column_names:
                 if(column in final_attributes):
                     local_columns.add(column)
+            #print("local_columns",local_columns)
+            #print("join_attribute",join_attribute)
             if(len(local_columns)>len(join_attribute)):
                 temp_project=Tree()
                 temp_project.data="project "+",".join(local_columns)
@@ -257,6 +260,7 @@ def vertical_reduction(leaf,result):
         del join_node.children[0]
         del join_node
     else:
+        print("test",len(join_node.children))
         if(leaf.parent.parent==None):
             join_node.parent=leaf.parent
             idx=leaf.parent.children.index(leaf)
@@ -510,3 +514,4 @@ def localize(optimized_tree):
             res=join_reduction(child,frag_tree)
             if(res==False):
                 un.children.remove(child)
+    

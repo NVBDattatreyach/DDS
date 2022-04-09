@@ -203,6 +203,7 @@ def get_optimized_tree(root, from_clause, attribute_table_map, table_attr_map):
                 table_name = root.data
             # print('table name:', table_name)
             if(table_name in table_attr_map):
+                # print('{} => {}'.format(table_name, table_attr_map[table_name]))
                 queries = ','.join(attr for attr in table_attr_map[table_name])
             else:
                 queries = '*' # redundant but lets keep it for corner cases
@@ -261,13 +262,23 @@ def get_optimized_tree(root, from_clause, attribute_table_map, table_attr_map):
         return root
 
 
-def get_child_node(given_table_name, attribute_table_map):
+def get_attr(join_query_part):
+    if('.' in join_query_part):
+        attr = join_query_part.split('.')[1]
+    else:
+        attr = join_query_part
+    return attr
+
+def get_child_node(given_table_name, attribute, attribute_table_map):
     attributes = []
     for attr, table_name in attribute_table_map.items():
         if(given_table_name == table_name):
             attributes.append(attr)
-    if(len(attributes) == 0):
-        attributes.append('*')
+    # if(len(attributes) == 0):
+    #     attributes.append('*')
+    if(attribute not in attributes):
+        attribute_table_map[attribute] = given_table_name
+        attributes.append(attribute)
     
     queries = ','.join(attr for attr in attributes)
     node = build_tree_from_direct_query(given_table_name, queries, clause='project ')

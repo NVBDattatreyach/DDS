@@ -111,7 +111,7 @@ class TableHandler:
                 if(table_name not in self.table_attr_map):
                     self.table_attr_map[table_name] = []
                 for col_name in col_name_lst:
-                    self.table_attr_map[table_name].append(col_name)
+                    self.table_attr_map[table_name].append(col_name[0])
         
         # else:
 

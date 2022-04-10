@@ -48,7 +48,7 @@ class ExecutionPlanner:
         
         print('query:', query)
         result = self.execute_query(query)
-        print('res:', result)
+        # print('res:', result)
         return result[0][0]
     
     def get_hostname(self, frag_id):
@@ -72,7 +72,7 @@ class ExecutionPlanner:
             table_name, frag_name = root.data.split()[-1], root.data.split()[1]
             self.fragname_fraginfo_map[table_name] = root.data.split()
             child_query = frag_name
-            print('at leaf:', child_query)
+            # print('at leaf:', child_query)
 
             # finding hostname for this fragment
             frag_Id = self.get_fragid_from_fragname(frag_name)
@@ -84,16 +84,18 @@ class ExecutionPlanner:
             # res = self.postorder(child, hostname)
             # print('res:', res)
             child_query, hostname = self.postorder(child, hostname)
-            print('child_query here:{} at {}'.format(child_query, hostname))
+            if(child_query==None or hostname==None):
+                continue
+            # print('child_query here:{} at {}'.format(child_query, hostname))
             child_queries.append({child_query: hostname})
         
         # ----------------------- root belong to a direct query -----------------------
         if(len(child_queries) == 1):
-            print('root:', root.data)
+            # print('root:', root.data)
 
             for key, val in child_queries[0].items():
                 query, hostname = key, val
-            print('query:{} hostname:{}'.format(query, hostname))
+            # print('query:{} hostname:{}'.format(query, hostname))
 
             if(root.data.startswith('project')):
                 child_node = root.children[0]
@@ -112,7 +114,7 @@ class ExecutionPlanner:
                         frag_name = table_info[1]
                         root.data = root.data.replace(table_name, frag_name)
                         
-                        print('lhs:{} rhs:{}'.format(child_queries[0], root.data.split(' ', 1)[1]))          
+                        # print('lhs:{} rhs:{}'.format(child_queries[0], root.data.split(' ', 1)[1]))          
                         query = query + ' WHERE ' + root.data.split(' ', 1)[1]+' As t{}'.format(self.alias_name_id)
                         self.alias_name_id += 1
 
@@ -124,12 +126,13 @@ class ExecutionPlanner:
                         break
             
            
-            print('with one child:', query)
+            # print('with one child:', query)
             return query, hostname
 
 
         #------------------------ root belongs to a join/union query -------------------------
         else:
+            # print('root:', root.data)
             if(root.data.startswith('union')):
                 query = ''
                 for child_query in child_queries:
@@ -143,22 +146,30 @@ class ExecutionPlanner:
                 query = query.split('union', 1)[1].strip()
                 print('union query:', query)
                 self.execution_plan.append({host: query})
+                return query, host
             
-            elif(root.data.startswith('join')):
+            elif(root.data.startswith('join') or root.data.startswith('vf join')):
                 query = ''
                 for child_query in child_queries:
                     for q, h in child_query.items():
                         table_alias = q.split()[-1]
                         query = query + ' join ' + table_alias
                         host = h
+                # -------------- finding the joining attribute ---------------------
+                if(root.data.startswith('vf join')):
+                    join_condition = root.data.split(' ')[-1]
+                else:
+                    join_condition = root.data.split(' ', 1)[1]
+                query = query + ' on ' + join_condition
                 
                 query = query + ' As t{}'.format(self.alias_name_id)
                 self.alias_name_id += 1
                 query = query.split('join', 1)[1].strip()
                 print('join query:', query)
                 self.execution_plan.append({host: query})
+                return query, host
+            return None, None
             
-            return query, host
     
     def prepare_execution_plan(self, root):
         self.postorder(root, '.')
@@ -181,6 +192,56 @@ class ExecutionPlanner:
                     host = hostname
                 else:
                     exec_plan[hostname].append(query)
+        
+        print()
+        print()
+        print('----------- updated exec plan -----------')
+        for hostname, query in exec_plan.items():
+            print('{} ===> {}'.format(hostname, query))
+        
+        # merging same site join queries to one sql query
+        for hostname, queries in exec_plan.items():
+            select_list = []
+            from_list = []
+            where_list = []
+            alias_list = []
+
+            for idx, query in enumerate(queries):
+
+                alias_name = (query.split())[-1]
+                alias_list.append(alias_name)
+
+                if(query.startswith('SELECT')):
+                    query = query.split('SELECT ')[1]
+                    select, query = query.split(' FROM ')
+                    if('WHERE' in query):
+                        fromm, query = query.split(' WHERE ')
+                        where, query = query.split(' As ')
+                        where_list.append(where)
+                    else:
+                        fromm, query = query.split(' As ')
+                    from_list.append(fromm)
+            
+                    for attr in select.split(','):
+                        var_name = fromm+'.'+attr
+                        select_list.append(var_name)
+                
+                elif('join' in query):
+                    query_split = query.split()
+                    if(query_split[0] in alias_list and query_split[2] in alias_list):
+                        select_attrs = ','.join(attr for attr in select_list)
+                        from_tables = ','.join(table for table in from_list)
+                        join_condition = (query.split(' on ')[1]).split(' As ')[0]
+                        where_list.append(join_condition)
+                        where_condn = ' and '.join(condn for condn in where_list)
+                        
+                        query = 'SELECT '+select_attrs+' FROM '+from_tables+' WHERE '+where_condn + ' As '+alias_name
+
+                        del exec_plan[hostname][idx-1]
+                        exec_plan[hostname][idx-1] = query
+                        del exec_plan[hostname][idx-2]
+
+                    # exec_plan[hostname].append(query)
         
         print()
         print()

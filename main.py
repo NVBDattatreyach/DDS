@@ -15,8 +15,8 @@ query_to_alias={}
 # clause_dict, condition_concat = parse_query("{}".format(query))
 # clause_dict, condition_concat = parse_query("SELECT * FROM EMPLOYEE GROUP BY EMPLOYEE.Dept_Name")
 # Select * from EMPLOYEE , EMPLOYEE_DETAILS where EMPLOYEE.Emp_Id=EMPLOYEE_DETAILS.Emp_Id and EMPLOYEE.Dept_Name=\'SALES\'
-# select cgpa from students, faculty, labs where students.facId=faculty.faculty_id and labs.lab_id=faculty.labId and labs.location='KCIS'
-query_parser = QueryParser("select cgpa from students, faculty, labs where students.facId=faculty.faculty_id and labs.lab_id=faculty.labId and labs.lab_location='KCIS'")
+# select cgpa from students, faculty, labs where students.facId=faculty.faculty_id and labs.lab_id=faculty.labId and labs.lab_location='KCIS'
+query_parser = QueryParser("Select * from EMPLOYEE , EMPLOYEE_DETAILS where EMPLOYEE.Emp_Id=EMPLOYEE_DETAILS.Emp_Id and EMPLOYEE.Dept_Name=\'SALES\'")
 query_parser.parse_query()
 
 clause_dict, condition_concat = query_parser.clause_dict, query_parser.condition_concat
@@ -39,5 +39,5 @@ Loc.localize(optimized_tree)
 print("After localization")
 print_tree(optimized_tree)
 
-# execution_planner = ExecutionPlanner()
-# plan = execution_planner.prepare_execution_plan(optimized_tree)
+execution_planner = ExecutionPlanner()
+plan = execution_planner.prepare_execution_plan(optimized_tree)

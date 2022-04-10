@@ -248,5 +248,20 @@ class ExecutionPlanner:
         print('----------- updated exec plan -----------')
         for hostname, query in exec_plan.items():
             print('{} ===> {}'.format(hostname, query))
+
+        # converting it to format hostname => [(t0, query), (t1, query)]
+        for hostname, queries in exec_plan.items():
+            for idx, query in enumerate(queries):
+                if(query.startswith('ship')):
+                    continue
+                alias_name = query.split()[-1]
+                queries[idx] = (alias_name, query)
+        
+        print()
+        print()
+        print('----------- updated exec plan -----------')
+        for hostname, query in exec_plan.items():
+            print('{} ===> {}'.format(hostname, query))
+
         
         return exec_plan

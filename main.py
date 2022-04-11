@@ -6,6 +6,11 @@ from Utility import *
 from TableHandler import *
 import localization as Loc
 import sys
+import sdd
+# import build_join_graph as bj
+import modifytree as mt
+import read_profiles
+
 
 query_to_alias={}
 
@@ -15,9 +20,14 @@ query_to_alias={}
 # clause_dict, condition_concat = parse_query("{}".format(query))
 # clause_dict, condition_concat = parse_query("SELECT * FROM EMPLOYEE GROUP BY EMPLOYEE.Dept_Name")
 
-query_parser = QueryParser("Select * from EMPLOYEE , EMPLOYEE_DETAILS where EMPLOYEE.Emp_Id=EMPLOYEE_DETAILS.Emp_Id and EMPLOYEE.Dept_Name=\'SALES\'")
-query_parser.parse_query()
+#query_parser = QueryParser("""select EMPLOYEE_DETAILS.Age,EMPLOYEE_DETAILS.Gender from EMPLOYEE,EMPLOYEE_DETAILS where EMPLOYEE.Emp_Id=EMPLOYEE_DETAILS.Emp_Id and EMPLOYEE.Dept_Name='SALES'""")
+#query_parser = QueryParser("""select * from students,faculty,labs where faculty.faculty_id=students.facId """)
+#query_parser = QueryParser("""select cgpa from students, faculty, labs where labs.lab_id=faculty.labId and students.facId=faculty.faculty_id and labs.lab_location='KCIS'""")
 
+query_parser = QueryParser("""select * from EMPLOYEE,WORKS_ON,PROJECT where EMPLOYEE.Emp_Id=WORKS_ON.Emp_Id and WORKS_ON.Project_Id=PROJECT.Project_Id and EMPLOYEE.Dept_Name='SALES'""")
+
+
+query_parser.parse_query()
 clause_dict, condition_concat = query_parser.clause_dict, query_parser.condition_concat
 
 attribute_table_map = get_attribute_to_table_mapping(clause_dict['select'], clause_dict['from'])
@@ -38,5 +48,66 @@ Loc.localize(optimized_tree)
 print("After localization")
 print_tree(optimized_tree)
 
+print("queries")
+local_queries,view_to_frag=mt.update_tree(optimized_tree)
+print_tree(optimized_tree)
+
+print(local_queries)
+print_tree(optimized_tree)
+sdd_input=mt.create_sdd_input(optimized_tree,view_to_frag)
+
+for join in sdd_input:
+    print(join)
+
+sdd_input=mt.update_sdd_input(sdd_input)
+#print(view_to_frag)
+profiles=read_profiles.get_profile()
+cost=read_profiles.get_cost()
+#print(sdd_input)
+#print(profiles)
+#print(cost)
+
+
+for k,v in local_queries.items():
+    profiles[k]=profiles[v[1]].copy()
+    profiles[k]['card']*=0.5
+    view_cols=v[3]
+    frag_cols=profiles[v[1]]['Cols']
+    if(view_cols!="*"):
+        view_cols=v[3].split(",")
+        for col in frag_cols:
+            if col not in view_cols:
+                profiles[k].pop(col)
+                profiles[k]['Cols'].remove(col)
+
+
+all_selectivties=[]
+for join in sdd_input:
+    selectivity_per_join=[]
+    for semi_join in join:
+        selectivity=min(1,profiles[semi_join[3]][semi_join[5]]['val']/profiles[semi_join[3]][semi_join[5]]['dom'])
+        selectivity_per_join.append(selectivity)
+    all_selectivties.append(selectivity_per_join)
+
+for row in all_selectivties:
+    print(row)
+sdd.sdd(sdd_input,cost,profiles,all_selectivties)
+
+
+
+
+
+"""
+sdd input
+
+
+"""
+
+"""
 execution_planner = ExecutionPlanner()
+
+
 plan = execution_planner.prepare_execution_plan(optimized_tree)
+CP5 => [("create view t1 as select * from EMP1",t1),("create view t2 as SELECT * from EMP_DETAILS1"),("t1 join t2"),()]
+    ["create view t1 as select * from EMP1, EMP_DETAILS where EMP1.Emp_Id=EMP_DETAILS.Emp_Id"]
+"""

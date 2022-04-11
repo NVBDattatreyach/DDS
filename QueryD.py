@@ -88,11 +88,9 @@ class QueryDecomposer:
 
                 left_node = None
                 right_node = None
-                
 
                 # scan the direct_query_nodes list to find out the correct pair of nodes to be joined
                 for idx, query in enumerate(self.direct_query_nodes):
-                    print('query ======', query)
                     if(query == None):
                         continue
                     q_l, q_r = split_query(query.data.split(' ',1)[1])
@@ -105,9 +103,11 @@ class QueryDecomposer:
                         self.direct_query_nodes[idx] = None
                         
                 if(left_node == None):
-                    left_node = get_child_node(lhs_table, self.attribute_table_map)
+                    attr = get_attr(condition[0].value)
+                    left_node = get_child_node(lhs_table, attr, self.attribute_table_map)
                 if(right_node == None):
-                    right_node = get_child_node(rhs_table, self.attribute_table_map)
+                    attr = get_attr(condition[2].value)
+                    right_node = get_child_node(rhs_table, attr, self.attribute_table_map)
                 join_query_node = build_tree_from_join_query(condition.value, [left_node, right_node])
                 self.join_query_nodes.append(join_query_node)
         
@@ -135,7 +135,6 @@ class QueryDecomposer:
                     all_children.append(child.children[0].data)
                 
                 for child in cur_node_children:
-                    print('child:', child.data)
                     if(child.children[0].data not in all_children):
                         cur_node.children.append(child)
                     elif(child.data.startswith('select')):

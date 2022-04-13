@@ -1,0 +1,36 @@
+{
+    "SUPPLIER" : 
+    {
+        "SNUM" :
+        {
+            "SIZE" : 4,
+            "VAL" : 200
+        },
+        "NAME" :
+        {
+            "SIZE" : 20,
+            "VAL" : 200
+        }
+    },
+    "SUPPLY" :
+    {
+        "SNUM" :
+        {
+            "SIZE" : 4,
+            "VAL" : 1000
+        },
+        "DNO" :
+        {
+            "SIZE" : 2,
+            "VAL" : 100
+        }
+    },
+    "DEPT" :
+    {
+        "DNO" :
+        {
+            "SIZE" : 2,
+            "VAL" : 20
+        }
+    }
+}

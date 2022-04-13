@@ -1,4 +1,5 @@
 # from QueryParser import parse_query
+from matplotlib.pyplot import table
 from QueryP import QueryParser
 from QueryD import QueryDecomposer
 from ExecutionPlanner import ExecutionPlanner
@@ -20,12 +21,8 @@ query_to_alias={}
 # clause_dict, condition_concat = parse_query("{}".format(query))
 # clause_dict, condition_concat = parse_query("SELECT * FROM EMPLOYEE GROUP BY EMPLOYEE.Dept_Name")
 
-#query_parser = QueryParser("""select EMPLOYEE_DETAILS.Age,EMPLOYEE_DETAILS.Gender from EMPLOYEE,EMPLOYEE_DETAILS where EMPLOYEE.Emp_Id=EMPLOYEE_DETAILS.Emp_Id and EMPLOYEE.Dept_Name='SALES'""")
-#query_parser = QueryParser("""select * from students,faculty,labs where faculty.faculty_id=students.facId """)
-#query_parser = QueryParser("""select cgpa from students, faculty, labs where labs.lab_id=faculty.labId and students.facId=faculty.faculty_id and labs.lab_location='KCIS'""")
 
-query_parser = QueryParser("""select * from EMPLOYEE,WORKS_ON,PROJECT where EMPLOYEE.Emp_Id=WORKS_ON.Emp_Id and WORKS_ON.Project_Id=PROJECT.Project_Id and EMPLOYEE.Dept_Name='SALES'""")
-
+query_parser = QueryParser("""select * from PROJECT""")
 
 query_parser.parse_query()
 clause_dict, condition_concat = query_parser.clause_dict, query_parser.condition_concat
@@ -55,12 +52,10 @@ print_tree(optimized_tree)
 print(local_queries)
 print_tree(optimized_tree)
 sdd_input=mt.create_sdd_input(optimized_tree,view_to_frag)
-
-for join in sdd_input:
-    print(join)
-
+print(sdd_input)
 sdd_input=mt.update_sdd_input(sdd_input)
 #print(view_to_frag)
+
 profiles=read_profiles.get_profile()
 cost=read_profiles.get_cost()
 #print(sdd_input)
@@ -70,7 +65,6 @@ cost=read_profiles.get_cost()
 
 for k,v in local_queries.items():
     profiles[k]=profiles[v[1]].copy()
-    profiles[k]['card']*=0.5
     view_cols=v[3]
     frag_cols=profiles[v[1]]['Cols']
     if(view_cols!="*"):
@@ -79,10 +73,9 @@ for k,v in local_queries.items():
             if col not in view_cols:
                 profiles[k].pop(col)
                 profiles[k]['Cols'].remove(col)
-
-
 all_selectivties=[]
 for join in sdd_input:
+    print(join)
     selectivity_per_join=[]
     for semi_join in join:
         selectivity=min(1,profiles[semi_join[3]][semi_join[5]]['val']/profiles[semi_join[3]][semi_join[5]]['dom'])
@@ -91,11 +84,39 @@ for join in sdd_input:
 
 for row in all_selectivties:
     print(row)
-sdd.sdd(sdd_input,cost,profiles,all_selectivties)
 
+all_orders=[]
+for join,selectivity in zip(sdd_input,all_selectivties):
+    order=[]
+    final_reductions={}
+    for row in join:
+        final_reductions[row[1]]=[row[1],row[0]]
+        final_reductions[row[3]]=[row[3],row[2]]
+    sdd.sdd1(join,cost,profiles,selectivity,order,final_reductions)
+    print(order)
+    print(final_reductions)
+    tables_at_sites={}
+    for k,v in final_reductions.items():
+        if(v[1] in tables_at_sites):
+            tables_at_sites[v[1]].append(v[0])
+        else:
+            tables_at_sites[v[1]]=[v[0]]
+    print(tables_at_sites)
+    cost_at_sites={}
+    for site1 in tables_at_sites.keys():
+        cost=0
+        for site2,tables in tables_at_sites.items():
+            if(site1!=site2):
+                for table in tables:
+                    size=0
+                    for col in profiles[table]['Cols']:
+                        size+=profiles[table][col]['size']
+                    cost+=size*profiles[table]['card']
 
-
-
+        cost_at_sites[site1]=cost
+    
+    final_site=min(cost_at_sites.keys(),key=(lambda k:cost_at_sites[k]))
+    print(final_site)
 
 """
 sdd input

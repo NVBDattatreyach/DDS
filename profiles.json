@@ -372,7 +372,7 @@
             "Cols":["Project_Id","Budget"],
             "Project_Id":{
                 "size":255,
-                "val":2,
+                "val":2250,
                 "dom":2250
             },
             "Budget":{

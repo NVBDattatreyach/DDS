@@ -109,8 +109,12 @@ def horizontal_select_reduction(leaf,result):
             
             temp=Tree()
             temp.data=str(row[2])+" "+row[0]+" "+row[1]+" "+leaf.data
-            temp.parent=un
-            un.children.append(temp)
+            temp_project=Tree()
+            temp_project.data=leaf.parent.data
+            temp.parent=temp_project
+            temp_project.children.append(temp)
+            temp_project.parent=un
+            un.children.append(temp_project)
         else:
             cur_frag_predicates=get_predicates(row[2])
             cur_predicates=[x[0] for x in cur_frag_predicates]
@@ -230,7 +234,7 @@ def vertical_reduction(leaf,result):
         temp.data=str(row[2])+" "+row[0]+" "+"VF"+" "+leaf.data
         if(final_attributes[0]!='*'):
             columns=get_columns_of_fragment(row[2])
-            column_names=[x[0] for x in columns]
+            column_names=[leaf.data+"."+x[0] for x in columns]
             #print("column names",column_names)
             local_columns=set(join_attribute)
             for column in column_names:

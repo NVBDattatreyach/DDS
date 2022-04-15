@@ -4,7 +4,6 @@ import System_Catalog as SC
 from Utility import Tree
 
 def post_order(node,table_to_view,view_to_frag,local_queries,temp_value):
-    
     if(len(node.children)==0):
         
         frag_id,frag_name,frag_type,table_name=node.data.split(" ")
@@ -100,7 +99,14 @@ def find_union(root):
             return x
     return None
     
-
+def find_join(root):
+    if(root.data[:4]=="join"):
+        return root
+    for child in root.children:
+        x=find_join(child)
+        if(x!=None):
+            return x
+    return None
 def create_sdd_input(root,view_to_frag):
     sdd_input=[]
     union_node=find_union(root)
@@ -113,7 +119,15 @@ def create_sdd_input(root,view_to_frag):
             
         return sdd_input
     else:
-        pass
+        join_node=find_join(root)
+        if(join_node!=None):
+            sub_tree_sdd_input=[]
+            preorder(join_node,sub_tree_sdd_input,view_to_frag)
+            sdd_input.append(sub_tree_sdd_input)
+            return sdd_input
+        else:
+            return []
+
 
 def update_sdd_input(sdd_input):
     view_to_site={}

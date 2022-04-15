@@ -1,4 +1,5 @@
 # from QueryParser import parse_query
+from typing import final
 from matplotlib.pyplot import table
 from QueryP import QueryParser
 from QueryD import QueryDecomposer
@@ -11,6 +12,7 @@ import sdd
 # import build_join_graph as bj
 import modifytree as mt
 import read_profiles
+import copy
 
 
 query_to_alias={}
@@ -22,7 +24,7 @@ query_to_alias={}
 # clause_dict, condition_concat = parse_query("SELECT * FROM EMPLOYEE GROUP BY EMPLOYEE.Dept_Name")
 
 
-query_parser = QueryParser("""select * from PROJECT""")
+query_parser = QueryParser("""select * from EMPLOYEE,WORKS_ON,PROJECT where EMPLOYEE.Emp_Id=WORKS_ON.Emp_Id and WORKS_ON.Project_Id=PROJECT.Project_Id""")
 
 query_parser.parse_query()
 clause_dict, condition_concat = query_parser.clause_dict, query_parser.condition_concat
@@ -46,25 +48,28 @@ print("After localization")
 print_tree(optimized_tree)
 
 print("queries")
-local_queries,view_to_frag=mt.update_tree(optimized_tree)
+local_queries,view_to_frag,graph=mt.update_tree(optimized_tree)
 print_tree(optimized_tree)
+for k,v in graph.items():
+    print(k,"->",v)
+
 
 print(local_queries)
 print_tree(optimized_tree)
 sdd_input=mt.create_sdd_input(optimized_tree,view_to_frag)
-print(sdd_input)
+# print(sdd_input)
 sdd_input=mt.update_sdd_input(sdd_input)
 #print(view_to_frag)
 
 profiles=read_profiles.get_profile()
-cost=read_profiles.get_cost()
+ping_cost=read_profiles.get_cost()
 #print(sdd_input)
 #print(profiles)
 #print(cost)
 
 
 for k,v in local_queries.items():
-    profiles[k]=profiles[v[1]].copy()
+    profiles[k]=copy.deepcopy(profiles[v[1]])
     view_cols=v[3]
     frag_cols=profiles[v[1]]['Cols']
     if(view_cols!="*"):
@@ -82,19 +87,29 @@ for join in sdd_input:
         selectivity_per_join.append(selectivity)
     all_selectivties.append(selectivity_per_join)
 
-for row in all_selectivties:
-    print(row)
+# for row in all_selectivties:
+#     print(row)
 
 all_orders=[]
-for join,selectivity in zip(sdd_input,all_selectivties):
+for join,selectivity in zip(sdd_input,all_selectivties[:]):
+    
     order=[]
     final_reductions={}
+    semi_join_graph={}
+    print("sdd input")
     for row in join:
+        print(row)
         final_reductions[row[1]]=[row[1],row[0]]
         final_reductions[row[3]]=[row[3],row[2]]
-    sdd.sdd1(join,cost,profiles,selectivity,order,final_reductions)
-    print(order)
-    print(final_reductions)
+        
+    sdd.sdd1(join,ping_cost,profiles,selectivity,order,final_reductions,semi_join_graph)
+    
+    print("sdd output:")
+    for x in order:
+        print(x)
+    print("final reductions")
+    for k,v in final_reductions.items():
+        print(k,v)
     tables_at_sites={}
     for k,v in final_reductions.items():
         if(v[1] in tables_at_sites):
@@ -114,9 +129,11 @@ for join,selectivity in zip(sdd_input,all_selectivties):
                     cost+=size*profiles[table]['card']
 
         cost_at_sites[site1]=cost
-    
+    print(cost_at_sites)
     final_site=min(cost_at_sites.keys(),key=(lambda k:cost_at_sites[k]))
     print(final_site)
+    
+    print("----------------")
 
 """
 sdd input
@@ -132,3 +149,4 @@ plan = execution_planner.prepare_execution_plan(optimized_tree)
 CP5 => [("create view t1 as select * from EMP1",t1),("create view t2 as SELECT * from EMP_DETAILS1"),("t1 join t2"),()]
     ["create view t1 as select * from EMP1, EMP_DETAILS where EMP1.Emp_Id=EMP_DETAILS.Emp_Id"]
 """
+

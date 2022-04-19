@@ -97,8 +97,8 @@ def sdd1(join,ping_cost,profiles,selectivities,semi_join_order,final_reductions,
         #print("selected",output)
         old_name=join[max_id][1]
         join_attribute=join[max_id][4]
-        new_name=old_name+"'"
-        p=new_name.find("'")
+        new_name=old_name+"_"
+        p=new_name.find("_")
         final_reductions[new_name[:p]][0]=new_name
         output.append(new_name)
         semi_join_order.append(output)

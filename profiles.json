@@ -368,7 +368,7 @@
         },
     "PROJECT2":{
             "card":2250,
-            "site":"CP8",
+            "site":"CP6",
             "Cols":["Project_Id","Budget"],
             "Project_Id":{
                 "size":255,

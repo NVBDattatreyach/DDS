@@ -93,7 +93,6 @@ def build_frag_tree():
 
 def horizontal_select_reduction(leaf,result):
     print(leaf.data)
-    
     select_predicates_list=[]   #find select predicate to be matched with fragment predicate
     if(leaf.parent.data[:6]=="select" or (leaf.parent.parent!=None and leaf.parent.parent.data[:6]=="select")):
         select_predicate_condition=""
@@ -483,8 +482,7 @@ def join_reduction(join_node,frag_tree):
         del join_node.children[1]
         return False
     else:
-        join_node.children.clear()
-        return False        
+        return True       
 
 def localize(optimized_tree):
     leaves=[]
@@ -492,7 +490,7 @@ def localize(optimized_tree):
     
     find_leaves(optimized_tree,leaves)
     for leaf in leaves:
-        
+
         result=get_fragmentation(leaf)
         if(result[0][1]=='HF' or result[0][1]=='DHF'):  #if a table is fragmented into horizontal fragment
             horizontal_select_reduction(leaf,result)
@@ -514,8 +512,8 @@ def localize(optimized_tree):
     if(first_join!=None):
         un=join_distribution(first_join)
         childs=un.children.copy()
+        
         for child in childs:
             res=join_reduction(child,frag_tree)
             if(res==False):
                 un.children.remove(child)
-    

@@ -1,5 +1,4 @@
 
-from doctest import ELLIPSIS_MARKER
 import System_Catalog as SC
 from Utility import Tree
 
@@ -9,7 +8,7 @@ def post_order(node,table_to_view,view_to_frag,local_queries,temp_value,graph):
         frag_id,frag_name,frag_type,table_name=node.data.split(" ")
         project_node=node.parent
         view_name="v{}".format(temp_value[0])
-        query="""create view {} as select """.format(view_name)
+        query="""create Table {} as select """.format(view_name)
         temp_value[0]+=1
         query=query+project_node.data[8:]
         query=query+""" from """
@@ -17,6 +16,7 @@ def post_order(node,table_to_view,view_to_frag,local_queries,temp_value,graph):
         select_node=None
         if(project_node.parent.data[:6]=="select"):
             select_node=project_node.parent
+            select_node.data=select_node.data.replace(table_name+".",frag_name+".")
             query=query+"""where """+select_node.data[7:]
         query=query.strip(" ")
         local_queries[view_name]=(frag_id,frag_name,query,project_node.data[8:])
@@ -71,11 +71,10 @@ def post_order(node,table_to_view,view_to_frag,local_queries,temp_value,graph):
             node.data=final_join_str
 
 
-def update_tree(root):
+def update_tree(root,temp_value):
     table_to_frag={}
     view_to_frag={}
     local_queries={}
-    temp_value=[0]
     graph={}
     post_order(root,table_to_frag,view_to_frag,local_queries,temp_value,graph)
     return (local_queries,view_to_frag,graph)

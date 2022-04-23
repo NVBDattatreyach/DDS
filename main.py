@@ -25,7 +25,7 @@ query_to_alias={}
 # clause_dict, condition_concat = parse_query("SELECT * FROM EMPLOYEE GROUP BY EMPLOYEE.Dept_Name")
 
 
-query_parser = QueryParser("""UPDATE EMPLOYEE SET EMPLOYEE.Dept_Name='ADMIN' WHERE Emp_Id=4""")
+query_parser = QueryParser("""UPDATE EMPLOYEE SET EMPLOYEE.Reports_To=10 WHERE Emp_Id=4""")
 
 query_parser.parse_query()
 clause_dict, condition_concat = query_parser.clause_dict, query_parser.condition_concat

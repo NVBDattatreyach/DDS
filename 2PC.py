@@ -111,6 +111,7 @@ def execute_query():
         conn.commit()
     return jsonify({'status':result})
 
+log_file = open('newfile.txt', 'w')
 @app.route('/to_participant',methods=['POST'])
 def process_2PC_request():
     data=request.get_json()
@@ -118,18 +119,26 @@ def process_2PC_request():
     print('query:', query)
     query_parts = query.split(';', 1)
     cursor=conn.cursor()
+    global log_file
     if(query_parts[0] == 'PREPARE'):
+        log_file = open('newfile.txt', 'w')
         query = query_parts[1]
-        print('msg:{} query:{}'.format(query_parts[0], query))
+        print('msg:{} query:{}'.format(query_parts[0], query))  
         try:
             cursor.execute(query)
+            log_file.write('READY\n')
             # result = cursor.fetchall()
         except:
+            log_file.write('ABORT\n')
             return jsonify({'status': 'VOTE-ABORT'})
         return jsonify({'status': 'VOTE-COMMIT'})
     
     if(query_parts[0] == 'GLOBAL-COMMIT'):
+        log_file.write('COMMIT\n')
         conn.commit()
+    else:
+        log_file.write('ABORT\n')
+    log_file.close()
     return jsonify({'status': 'ACK'})
     
 

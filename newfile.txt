@@ -1,0 +1,3 @@
+begin_commit
+GLOBAL-COMMIT
+end_transaction

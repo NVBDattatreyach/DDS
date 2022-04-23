@@ -16,11 +16,14 @@ import System_Catalog as SC
 import modifytree as mt
 import read_profiles
 import copy
+from prettytable import PrettyTable
 import QueryExecution
 
 query_to_alias={}
 # select * from EMPLOYEE,WORKS_ON,PROJECT where EMPLOYEE.Emp_Id=WORKS_ON.Emp_Id and WORKS_ON.Project_Id=PROJECT.Project_Id and EMPLOYEE.Dept_Name='SALES'
 # select * from EMPLOYEE,WORKS_ON where EMPLOYEE.Emp_Id=WORKS_ON.Emp_Id and EMPLOYEE.Dept_Name='SALES'
+# select * from EMPLOYEE where EMPLOYEE.Dept_Name='SALES' and EMPLOYEE.Loc_Id='MUM'
+# select * from PROJECT
 
 # query = sys.argv[1]
 # print('{}'.format(query))
@@ -77,6 +80,7 @@ while(True):
                     profiles[k].pop(col)
                     profiles[k]['Cols'].remove(col)
     all_selectivties=[]
+    print("sdd input",sdd_input)
     for join in sdd_input:
         selectivity_per_join=[]
         for semi_join in join:
@@ -85,9 +89,12 @@ while(True):
         all_selectivties.append(selectivity_per_join)
 
     final_output=[]
+    join_present=False
+    
     for join,selectivity in zip(sdd_input,all_selectivties[:]):
         
         order=[]
+        join_present=True
         final_reductions={}
         semi_join_graph={}
         for row in join:
@@ -135,7 +142,7 @@ while(True):
     for x in final_output:
         print(x[0],x[1])
 
-    print(tables_at_sites)
+    # print(tables_at_sites)
     # execution
     QueryExecution.execute_initial_queries(site_wise_queries)
     print("-----------executing join-----------------")
@@ -144,10 +151,12 @@ while(True):
     union_node=mt.find_union(optimized_tree)
     if(union_node!=None):
         site_wise_tables=defaultdict(list)
-        
-        for t,out in zip(results,final_output):
-            site_wise_tables[out[1]].append(t)
-
+        if(join_present==True):
+            for t,out in zip(results,final_output):
+                site_wise_tables[out[1]].append(t)
+        else:
+            site_wise_tables=site_wise_views.copy()
+            
         site_wise_results=QueryExecution.getrowspersite(site_wise_tables)
         
 
@@ -158,21 +167,76 @@ while(True):
                     site_wise_cost[site1]+=ping_cost[site2][site1]*site_wise_results[site2]
         
         union_site=min(site_wise_cost.keys(),key=(lambda k:site_wise_cost[k]))
-        
-        QueryExecution.Union(site_wise_tables,union_site)
+        print("best union site",union_site)
+        QueryExecution.Union(site_wise_tables,union_site,optimized_tree)
+
+            
     
     else:
-        query='select * from {}'.format(results[0])
-        final_site=final_output[0][1]
-        ip_address_mapping={'CP5':"10.3.5.211","CP6":"10.3.5.208","CP7":"10.3.5.204","CP8":"10.3.5.205"}
-        conn=SC.connect(ip_address_mapping[final_site])
-        cursor=conn.cursor()
-        cursor.execute(query)
-        result=cursor.fetchall()
-        for row in result:
-            print(row)
+        if(len(results)!=0):
+            project_columns=optimized_tree.data[8:].split(",")
+            actual_columns=set()
+            for col in project_columns:
+                p=col.find(".")
+                if(p!=-1):
+                    actual_columns.add(col[p+1:])
+                else:
+                    actual_columns.add(col)
+            col_str=",".join(actual_columns)
+            query='select {} from {}'.format(col_str,results[0])
+            print("query",query)
+            final_site=final_output[0][1]
+            ip_address_mapping={'CP5':"10.3.5.211","CP6":"10.3.5.208","CP7":"10.3.5.204","CP8":"10.3.5.205"}
+            conn=SC.connect(ip_address_mapping[final_site])
+            cursor=conn.cursor(pymysql.cursors.DictCursor)
+            cursor.execute(query)
+            res=cursor.fetchall()
+            if(len(res)>0):
+                columns=list(res[0].keys())
+                if len(actual_columns)==1 and '*' in actual_columns:
+                    actual_columns=columns
+                mytable=PrettyTable(actual_columns)
+                for row in res:
+                    temp=[row[col] for col in actual_columns]
+                    mytable.add_row(temp)
+                print("---RESULT-----")
+                print(mytable)
+                conn.close()
+            else:
+                print("----RESULT-----")
+                print("0 rows fetched")
+        else:
             
-    # QueryExecution.drop_tables()
+            project_columns=optimized_tree.data[8:].split(",")
+            actual_columns=set()
+            ip_address_mapping={'CP5':"10.3.5.211","CP6":"10.3.5.208","CP7":"10.3.5.204","CP8":"10.3.5.205"}
+            for col in project_columns:
+                p=col.find(".")
+                if(p!=-1):
+                    actual_columns.add(col[p+1:])
+                else:
+                    actual_columns.add(col)
+            col_str=",".join(actual_columns)
+            query='select {} from  v0'.format(col_str)
+            final_site=""
+            for k in site_wise_queries.keys():
+                final_site=k
+            conn=SC.connect(ip_address_mapping[final_site])
+            cursor=conn.cursor(pymysql.cursors.DictCursor)
+            cursor.execute(query)
+            results=cursor.fetchall()
+            print("----------RESULT-----------")
+            if(len(results)>0):
+                columns=list(results[0].keys())
+                mytable=PrettyTable(columns)
+                for row in results:
+                    temp=[row[col] for col in columns]
+                    mytable.add_row(temp)
+                print(mytable)
+            else:
+                print("0 rows fetched")
+            conn.close()
+    QueryExecution.drop_tables()
 
 
     """

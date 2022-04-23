@@ -16,10 +16,12 @@ class QueryParser:
         self.clause_dict['group by'] = []
         self.clause_dict['having'] = []
         self.clause_dict['functions'] = []
+        self.clause_dict['set'] = []
 
         self.condition_concat = {}
         self.condition_concat['and'] = []
         self.condition_concat['or'] = []
+        self.is_update = False
     
 
     # ---------------------------------------- parsing the input query ------------------------------
@@ -53,7 +55,15 @@ class QueryParser:
                     clause_name = 'group by'
                 elif(token.value.lower() == 'having'):
                     clause_name = 'having'
+                elif(token.value.lower() == 'update'):
+                    clause_name = 'from'
+                    self.is_update = True
+                elif(token.value.lower() == 'set' and self.is_update == True):
+                    clause_name = 'set'
             # print('clause_name:', clause_name)
+
+            if(isinstance(token, sqlparse.sql.Comparison) and clause_name == 'set'):
+                self.clause_dict['set'].append(token.value)
 
             if(isinstance(token, sqlparse.sql.Where)):
                 cur_concat = None
@@ -108,6 +118,7 @@ class QueryParser:
                     self.clause_dict['group by'].append(token.value)
                 elif(clause_name == 'having'):
                     self.clause_dict['having'].append(token.value)
+                
             
             if(isinstance(token, sqlparse.sql.IdentifierList)):
                 for identifier in token.get_identifiers():

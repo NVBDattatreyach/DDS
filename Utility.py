@@ -31,10 +31,15 @@ def build_tree_from_join_query(query, children_list, clause='join '):
     return node
 
 
-def add_root(select_tokens, join_query_nodes, direct_query_nodes, group_by_clause, having_clause):   
-    final_project_node = Tree()
-    final_project_node.data = 'project '+','.join(token for token in select_tokens)
-    cur_node = final_project_node
+def add_root(select_tokens, join_query_nodes, direct_query_nodes, group_by_clause, having_clause, set_clause):   
+    if(len(set_clause) > 0):
+        final_project_node = Tree()
+        final_project_node.data = 'set '+','.join(token for token in set_clause)
+        cur_node = final_project_node
+    else:
+        final_project_node = Tree()
+        final_project_node.data = 'project '+','.join(token for token in select_tokens)
+        cur_node = final_project_node
 
     if(len(having_clause) > 0):
         having_node = Tree()

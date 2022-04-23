@@ -19,6 +19,7 @@ class QueryDecomposer:
         self.where_clause = clause_dict['where']
         self.group_by_clause = clause_dict['group by']
         self.having_clause = clause_dict['having']
+        self.set_clause = clause_dict['set']
 
         self.condition_concat = condition_concat
         self.attribute_table_map = attribute_table_map
@@ -28,6 +29,7 @@ class QueryDecomposer:
         print('where_clause', self.where_clause)
         print('group_by', self.group_by_clause)
         print('having', self.having_clause)
+        print('set', self.set_clause)
     
     # ---------------------------------- extracting direct (select) queries -------------------------------
     def extract_direct_queries(self):
@@ -186,7 +188,7 @@ class QueryDecomposer:
         else:
             self.create_generic_query()
         
-        root = add_root(self.select_clause, self.join_query_nodes, self.direct_query_nodes, self.group_by_clause, self.having_clause)
+        root = add_root(self.select_clause, self.join_query_nodes, self.direct_query_nodes, self.group_by_clause, self.having_clause, self.set_clause)
         return root 
         
     

@@ -25,7 +25,7 @@ query_to_alias={}
 # clause_dict, condition_concat = parse_query("SELECT * FROM EMPLOYEE GROUP BY EMPLOYEE.Dept_Name")
 
 
-query_parser = QueryParser("""UPDATE EMPLOYEE SET EMPLOYEE.Loc_Id='MUM' WHERE Emp_Id=3""")
+query_parser = QueryParser("""UPDATE EMPLOYEE SET EMPLOYEE.Dept_Name='ADMIN' WHERE Emp_Id=4""")
 
 query_parser.parse_query()
 clause_dict, condition_concat = query_parser.clause_dict, query_parser.condition_concat
@@ -52,9 +52,10 @@ if(query_parser.is_update == True):
     coordinator = Coordinator(clause_dict['where'])
     coordinator.get_participants(optimized_tree)
     print('host name list:', coordinator.host_name_list)
-    coordinator.get_another_participant(clause_dict['set'], clause_dict['from'])
-    print('another host name list:', coordinator.host_pairs)
-    coordinator.Two_PC()
+    is_2PC_required = coordinator.get_another_participant(clause_dict['set'], clause_dict['from'])
+    if(is_2PC_required == True):
+        print('another host name list:', coordinator.host_pairs)
+        coordinator.Two_PC()
     exit()
 print("queries")
 local_queries,view_to_frag,graph=mt.update_tree(optimized_tree)

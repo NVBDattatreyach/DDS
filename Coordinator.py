@@ -54,7 +54,12 @@ class thread(threading.Thread):
 
         # send 'prepare' message to participant
         # self.s.send(self.msg.encode())
-        response = self.send_to_participant(self.site, [self.msg])
+
+        try:
+            response = self.send_to_participant(self.site, [self.msg])
+        except:
+            print('{} is not reachable'.format(self.site))
+            return
         print('{} data sent: {}'.format(self.thread_name, self.msg))
 
         # get reply from participant
@@ -77,6 +82,7 @@ class thread(threading.Thread):
             a += 1
         
         print("{} out of loop".format(self.thread_name))
+        
         # check for the votes
         if(vote_commit == 2):
             self.msg = 'GLOBAL-COMMIT'   
@@ -161,11 +167,12 @@ class Coordinator:
             initial_query = "SELECT COUNT(*)\
                             FROM {}\
                             WHERE {};".format(frag_name, condition)
-            print('initial query:', initial_query)
-            print('frag_name:{} hostname:{}'.format(frag_name, hostname))
+            # print('initial query:', initial_query)
+            # print('frag_name:{} hostname:{}'.format(frag_name, hostname))
             response = self.query(hostname, [initial_query])
-            print('response of initial query:', response)
-            # print('status:', r.json()['status'])
+            # print('response of initial query:', response)
+            # print('status:', response.json()['status'])
+            
             if(response[0][0]>0):
                 is_participant = True
             else:
@@ -175,19 +182,20 @@ class Coordinator:
                 self.host_name_list.append(hostname)
 
             # print('frag_id:{} host:{}'.format(frag_id, result))
+            
         for child in root.children:
             self.get_participants(child)
     
     
-    def extract_attr_from_set_clause(self, set_clause):
-        attr_list = []
-        for item in set_clause:
-            lhs = item.split('=')[0]
-            if('.' in lhs):
-                attr = lhs.split('.')[1]
-                attr_list.append(attr)
+    # def extract_attr_from_set_clause(self, set_clause):
+    #     attr_list = []
+    #     for item in set_clause:
+    #         lhs = item.split('=')[0]
+    #         if('.' in lhs):
+    #             attr = lhs.split('.')[1]
+    #             attr_list.append(attr)
         
-        return attr_list
+    #     return attr_list
     
     def get_table_columns(self, from_clause):
         table_name = from_clause[0]
@@ -204,7 +212,7 @@ class Coordinator:
 
     def get_another_participant(self, set_clause, from_clause):
         self.table_columns = self.get_table_columns(from_clause)
-        # print('table cols:', self.table_columns)
+        print('table cols:', self.table_columns)
 
         
         # get predicate conditions from all fragments, in advance
@@ -251,6 +259,33 @@ class Coordinator:
             # print('predicate cols:', predicate_columns)
             predicate_columns_str = ','.join(col for col in predicate_columns)
             break
+        
+        # that story here ----------------
+        cols_to_be_updated = []
+        are_two_tables_required = False
+        # get columns to be updated
+        idx = 0
+        for item in set_clause:
+            lhs, value = item.split('=')
+            if('.' in lhs):
+                prev_item, attr = lhs.split('.')
+                set_clause[idx] = item.replace(prev_item+'.', '')
+                print('item:', item)
+            idx += 1
+            print('prev:{} attr:{} set_clause:{}'.format(prev_item, attr, set_clause))
+            cols_to_be_updated.append(attr)
+            if(attr in predicate_columns):
+                are_two_tables_required = True
+
+            print('are_2_tables_required:', are_two_tables_required)
+
+        
+        if(are_two_tables_required == False):
+            q = 'UPDATE {} SET {} WHERE {}'.format(self.hostname_fragname_map[self.host_name_list[0]], set_clause[0], self.where_clause)
+            print('q=>', q)
+            response = self.query(self.host_name_list[0], [q])
+            print('only one frag used')
+            return False
 
         self.host_pairs = []
         for hosts in self.host_name_list:
@@ -284,29 +319,32 @@ class Coordinator:
             # print('attr_val_map:', self.attr_value_map)
             for hostname, predicate_details in hostname_predicate_map.items():
                 cnt = 0
+                print('for host:', hostname)
                 for attribute_name, attr_info in predicate_details.items():
                     sign = attr_info[0]
-                    val = attr_info[1]
+                    expected_val = attr_info[1].replace("'", "")
+                    actual_val = self.attr_value_map[attribute_name].replace("'", "")
                     if(sign == '='):
-                        # print('sign:= {} == {}'.format(self.attr_value_map[attribute_name], val))
-                        if(self.attr_value_map[attribute_name] == val):
+                        # print('sign:= {} == {}'.format(actual_val, expected_val))
+                        if(actual_val == expected_val):
                             cnt += 1
                     elif(sign == '!='):
-                        # print('sign:= {} != {}'.format(self.attr_value_map[attribute_name], val))
-                        if(self.attr_value_map[attribute_name] != val):
+                        # print('sign:= {} != {}'.format(actual_val, expected_val))
+                        if(actual_val != expected_val):
                             cnt += 1
                     elif(sign == '>='):
-                        if(self.attr_value_map[attr_name] >= val):
+                        if(actual_val >= expected_val):
                             cnt += 1
                     elif(sign == '<='):
-                        if(self.attr_value_map[attr_name] <= val):
+                        if(actual_val <= expected_val):
                             cnt += 1
                     elif(sign == '>'):
-                        if(self.attr_value_map[attr_name] > val):
+                        if(actual_val > expected_val):
                             cnt += 1
                     elif(sign == '<'):
-                        if(self.attr_value_map[attr_name] < val):
+                        if(actual_val < expected_val):
                             cnt += 1
+                    # print('ongoing cnt:', cnt)
                 # print('cnt:{} len_pred_details:{}'.format(cnt, len(predicate_details)))
                 if(cnt == len(predicate_details)):
                     target_hostname = hostname
@@ -316,6 +354,7 @@ class Coordinator:
             break
                
         print('all pairs:', self.host_pairs)
+        return True
     
     def get_ip_port(self, hostname):
         query = "SELECT Ip_address, Port_No FROM SITE_INFO WHERE Host_Name='{}'".format(hostname)
@@ -327,7 +366,9 @@ class Coordinator:
     
     # start the 2PC protocol
     def Two_PC(self):
-
+        start = input('start 2PC')
+        if(start.lower() == 'no'):
+            return
         delete_from_hostname = self.host_pairs[0][0]
         delete_from_fragname = self.host_pairs[0][1]
         insert_into_hostname = self.host_pairs[0][2]

@@ -107,6 +107,8 @@ def execute_query():
     print('execute_query_result:', result)
     # print(local_path)
     # os.system('mysql -uuser -piiit123 XMEN < {}'.format(local_path))
+    if(query.startswith('UPDATE')):
+        conn.commit()
     return jsonify({'status':result})
 
 @app.route('/to_participant',methods=['POST'])

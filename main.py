@@ -20,7 +20,7 @@ from prettytable import PrettyTable
 import QueryExecution
 
 query_to_alias={}
-# select * from EMPLOYEE,WORKS_ON,PROJECT where EMPLOYEE.Emp_Id=WORKS_ON.Emp_Id and WORKS_ON.Project_Id=PROJECT.Project_Id and EMPLOYEE.Dept_Name='SALES'
+#  select * from EMPLOYEE,WORKS_ON,PROJECT where EMPLOYEE.Emp_Id=WORKS_ON.Emp_Id and WORKS_ON.Project_Id=PROJECT.Project_Id and EMPLOYEE.Dept_Name='SALES'
 # select * from EMPLOYEE,WORKS_ON where EMPLOYEE.Emp_Id=WORKS_ON.Emp_Id and EMPLOYEE.Dept_Name='SALES'
 # select * from EMPLOYEE where EMPLOYEE.Dept_Name='SALES' and EMPLOYEE.Loc_Id='MUM'
 # select * from PROJECT
@@ -80,8 +80,9 @@ while(True):
                     profiles[k].pop(col)
                     profiles[k]['Cols'].remove(col)
     all_selectivties=[]
-    print("sdd input",sdd_input)
+    print("sdd input")
     for join in sdd_input:
+        print(join)
         selectivity_per_join=[]
         for semi_join in join:
             selectivity=min(1,profiles[semi_join[3]][semi_join[5]]['val']/profiles[semi_join[3]][semi_join[5]]['dom'])
@@ -123,7 +124,7 @@ while(True):
         #print(cost_at_sites)
         final_site=min(cost_at_sites.keys(),key=(lambda k:cost_at_sites[k]))
         #print(final_site)
-        
+        print(tables_at_sites)
         final_output.append((order,final_site,tables_at_sites,profiles))
 
     site_wise_queries=defaultdict(list)
